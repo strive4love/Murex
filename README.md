@@ -128,3 +128,74 @@ Control-M production is developed by BMC software Corporation ,
 
 
 ## Excel - vlookup ??????????????????????
+
+
+
+## murex client 
+1)bin  文件夹
+  avsjogl.dll
+  xxx.dll
+  bridge2mx.tlb
+  excel2mx.tlb
+  file.version
+  xxx.dll
+  regtlb.exe
+2)jar 文件夹
+ 　sun.jar
+  com.ibm.mq.jar
+  com.ibm.mqbind.jar
+  com.ibm.mqjms.jar
+  excel.jar
+  ie.jar
+  file.version
+  jta.jar
+  mail.jar
+  mxj.jar
+  servlet.jar
+  word.jar
+  xml4.jar
+  xxxx.jar
+
+3)mxjboot.jar
+4)client_mxg_qa1.bat
+  
+@ECHO OFF
+
+REM Mx G2000 Client Launcher
+REM Mofify this script to match your java and server environnement
+REM For 2.2.8 and 2.2.9
+REM V2.3
+
+setlocal
+
+SET JAVAHOME=%ProgramFiles(x86)%\Java\jre1.5.0_15
+
+SET MXJ_FILESERVER_HOST=magapp11a.uk.standardchartered.com
+SET MXJ_FILESERVER_PORT=14331
+SET MXJ_SITE_NAME=default
+SET MXJ_DESTINATION_SITE_NAME=mxg_qa1
+SET MXJ_PLATFORM_NAME=MX
+SET MXJ_PROCESS_NICK_NAME=MXG_QA1
+
+
+SET PATH=%JAVAHOME%\jre\bin;%JAVAHOME%\jre\bin\classic;%JAVAHOME%\bin;%JAVAHOME%\bin\classic;%PATH%
+
+SET PATH=%PATH%;bin
+SET MXJ_JAR_FILELIST=murex.download.guiclient.download
+SET MXJ_POLICY=java.policy
+SET MXJ_BOOT=mxjboot.jar
+SET MXJ_CONFIG_FILE=client.xml
+
+IF EXIST jar\%MXJ_BOOT% copy jar\%MXJ_BOOT% . >NUL
+
+title %~n0 FS:%MXJ_FILESERVER_HOST%:%MXJ_FILESERVER_PORT%/%MXJ_JAR_FILELIST%  Xml:%MXJ_SITE_NAME% /PLATF:%MXJ_PLATFORM_NAME% /NNAME:%MXJ_PROCESS_NICK_NAME%
+
+java -Xmx512m -cp %MXJ_BOOT% -Djava.security.policy=%MXJ_POLICY% -Djava.rmi.server.codebase=http://%MXJ_FILESERVER_HOST%:%MXJ_FILESERVER_PORT%/%MXJ_JAR_FILELIST% murex.rmi.loader.RmiLoader /MXJ_SITE_NAME:%MXJ_SITE_NAME% /MXJ_DESTINATION_SITE_NAME:%MXJ_DESTINATION_SITE_NAME% /MXJ_CLASS_NAME:murex.gui.xml.XmlGuiClientBoot /MXJ_PLATFORM_NAME:%MXJ_PLATFORM_NAME% /MXJ_PROCESS_NICK_NAME:%MXJ_PROCESS_NICK_NAME% /MXJ_CONFIG_FILE:%MXJ_CONFIG_FILE% %1 %2 %3 %4 %5 %6
+
+title Command Prompt
+endlocal
+pause
+
+## mxjboot.jar
+
+
