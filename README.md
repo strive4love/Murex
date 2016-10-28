@@ -3379,3 +3379,1999 @@ stop)
 		done
 ;;
 esac
+
+
+## magapp15a:/shared/opt/pos/mxg/mxg_bodev1$ less ./launchmxj.app
+#!/bin/sh
+
+# Murex: 13 Feb 2004
+MAJOR_VERSION=2000.2.11
+MINOR_VERSION=2.11
+# Mx G2000 3.1.prod Startup/Stop script for servers clients and utils.
+# set -x 0
+
+#--- Operating System ---
+OS_TYPE=`uname`
+PLATFORM_TYPE=`uname -p`
+
+if [ "$OS_TYPE" = "AIX" ]; then
+  MACHINE_NAME=`hostname -s`
+else
+  MACHINE_NAME=`hostname`
+fi
+
+echo "$1"
+if [ "${MACHINE_NAME}" = "gmsitnfs" ]
+then
+	if [ "$1" != "-s" ]
+	then
+		exit
+	fi
+fi
+
+##################################################
+
+##################################################
+_LS=/usr/bin/ls
+_LS_L="/usr/bin/ls -l"
+_PS=/usr/bin/ps
+
+case $PLATFORM_TYPE in
+sparc)
+    #_TEE="/shared/opt/pos/mxg/live/mxtee -t"
+    _TEE="/shared/opt/SCB/dev_launchers/scripts/mxtee -t"
+    ;;
+*)
+    _TEE="/usr/bin/tee"
+    ;;
+esac
+
+#_TEE="/shared/opt/pos/mxg/live/mxtee -t"
+#_TEE=/usr/bin/tee
+_AWK=/usr/bin/awk
+_ECHO=echo
+
+if [ "$OS_TYPE" = "Linux" ]; then
+_LS=/bin/ls
+_LS_L="/bin/ls -l"
+_PS=/bin/ps
+_AWK=/bin/awk
+_ECHO="echo -e"
+fi
+
+_ID=`id`
+if [ "$OS_TYPE" = "AIX" ]; then
+  USER_NAME=`echo $_ID| sed s/\(/" "/| sed s/\)/" "/| $_AWK '{printf "%s", substr($2,1,8)}'`
+else
+  USER_NAME=`echo $_ID| sed s/\(/" "/| sed s/\)/" "/| $_AWK '{print $2}'`
+fi
+
+PATH=.:$PATH
+export PATH
+
+##########################################
+# Common application argument environnemnt 
+# Set it up here: Eventually modify the following lines according to your needs.
+##########################################
+
+# Java Debug Log Level
+# 0|1|2|3|4
+MXJ_LOG_LEVEL=2
+
+# Path to store logs and PID files
+LOG_PATH=logs
+
+#Append log file at start/stop command
+APPEND_LOG=1
+#Create new empty log file at start/stop command
+#APPEND_LOG=0
+
+#Time loop value for the status option
+#in seconds
+LOOP_TIME=60
+
+#Set File Desc default value
+FD_LIMIT=2048
+#FD_LIMIT=1024
+
+# Settings for the Mx G2000 File Server.
+########################################
+FILESERVER_PATH=fs
+MXJ_HTTP_JAR=mxjhttp.jar
+# This file contains the complete path to the .jar files that are provided by the Mx G2000 File server.
+# It is also used as a parameter for the other servers and the client.
+MXJ_JAR_FILE=murex.download.service.download
+MXJ_GUI_JAR_FILE=murex.download.guiclient.download
+MXJ_FILESERVER_CONFIG_FILE=fileserver.xml
+
+# Settings for the Mx G2000 Xml Server.
+########################################
+# In case of no optional flags from the setting file
+# set the var to null. Do not modify here.
+XML_SERVER_ARGS=
+
+# The xmlserver.mxres allow you to specify ports to use for the xmlserver.
+#MXJ_XMLSERVER_CONFIG_FILE=public.mxres.xmlserver.xmlserver.mxres
+
+# XmlServer Stat
+#MXJ_STAT_FILE_NAME=stat
+#MXJ_STAT_PERIOD=10000
+
+# Settings for the MXML Server.
+########################################
+# The following setting is overrwitten by the one defined in mxg2000_settings, if exists.
+DEFAULT_MXML_SERVER_ARGS=""
+## DEFAULT_MXML_JVM_ARGS="-Xms256M -Xmx512M -Dsun.rmi.dgc.client.gcInterval=3600000 -Dsun.rmi.dgc.server.gcInterval=3600000"
+# CR: CMKL00000183191
+DEFAULT_MXML_JVM_ARGS="-d64 -Xmx2048M -Dsun.rmi.dgc.client.gcInterval=3600000 -Dsun.rmi.dgc.server.gcInterval=3600000"
+if [ "$OS_TYPE" = "SunOS" ]; then
+   DEFAULT_MXML_JVM_ARGS="-server $DEFAULT_MXML_JVM_ARGS"
+fi
+MXML_SERVER_ARGS="$DEFAULT_MXML_SERVER_ARGS"
+MXML_JVM_ARGS="$DEFAULT_MXML_JVM_ARGS"
+
+# Settings for the MDCS Server.
+########################################
+# The following setting is overrwitten by the one defined in mxg2000_settings, if exists.
+DEFAULT_MDCS_SERVER_ARGS=""
+DEFAULT_MDCS_JVM_ARGS="-Xmx2g -Dsun.rmi.dgc.client.gcInterval=36000000 -Dsun.rmi.dgc.server.gcInterval=36000000"
+if [ "$OS_TYPE" = "SunOS" ]; then
+   DEFAULT_MDCS_JVM_ARGS="-server $DEFAULT_MDCS_JVM_ARGS"
+fi
+MDCS_SERVER_ARGS="$DEFAULT_MDCS_SERVER_ARGS"
+MDCS_JVM_ARGS="$DEFAULT_MDCS_JVM_ARGS"
+
+# Settings for the MDRS Server.
+########################################
+# The following setting is overrwitten by the one defined in mxg2000_settings, if exists.
+DEFAULT_MDRS_SERVER_ARGS=""
+DEFAULT_MDRS_JVM_ARGS="-Xmx512M -Dsun.rmi.dgc.client.gcInterval=36000000 -Dsun.rmi.dgc.server.gcInterval=36000000"
+MDRS_SERVER_ARGS="$DEFAULT_MDRS_SERVER_ARGS"
+MDRS_JVM_ARGS="$DEFAULT_MDRS_JVM_ARGS"
+
+# Settings for all applications.
+################################
+# Default setting file.
+SETTINGS_FILE=mxg2000_settings.sh
+
+# Warning the MXJ_BOOT_JAR file MUST be on the same directory as the executable.
+MXJ_BOOT_JAR=mxjboot.jar
+
+# Define your default Launcher environement
+# The launcherall.mxres descibe the flags you use to launch the application itself.
+MXJ_CONFIG_FILE=public.mxres.common.launcherall.mxres
+
+# Define your site name
+# The site.mxres descibe the site itself.
+MXJ_SITE_NAME=site1
+
+# Define your hub name
+# The site.mxres descibe the site itself.
+MXJ_HUB_NAME=hub1
+
+# Define your default MxMlExchange environement
+# The file launchermxmlexchangeall.mxres describe the flags you use to launch the application itself.
+MXJ_MXMLEX_CONFIG_FILE=public.mxres.common.launchermxmlexchangeall.mxres
+MXJ_MXMLEX_CONFIG_FILE_SECONDARY=public.mxres.common.launchermxmlexchangesecondary.mxres
+MXJ_MXMLEX_CONFIG_FILE_SPACES=public.mxres.common.launchermxmlexchangespaces.mxres
+
+# Define your default Mx Contribution environement
+MXJ_CONTRIBUTION_CONFIG_FILE=public.mxres.common.launchermxcontribution.mxres
+
+# Define your default MDCS environement
+# The file launcherwarehouse.mxres describe the flags you use to launch the application itself.
+MXJ_MDCS_CONFIG_FILE=public.mxres.common.launchermxcache.mxres
+
+# Define your default MDRS environement
+# The file launchermxmarketdatarepository.mxres describe the flags you use to launch the application itself.
+MXJ_MDRS_CONFIG_FILE=public.mxres.common.launchermxmarketdatarepository.mxres
+
+#Define your default ActivityFeeder environment
+# The file launchermxactivityfeeders.mxres describe the flags you use to launch the application itself.
+MXJ_ACTIVITY_FEEDER_CONFIG_FILE=public.mxres.common.launchermxactivityfeeders.mxres
+
+# Setting for murexnet.
+#######################
+#Port used by the murexnet, defined here if not setted in mxg2000_settings file
+#(backward compatibility)
+MUREXNET_PORT=8000
+
+# In case of no optional flags from the setting file
+# set the var to null. Do not modify here.
+MUREXNET_ARGS=
+
+# Settings for clients.
+#######################
+# Define your default client  environement
+MXJ_PLATFORM_NAME=MX
+MXJ_PROCESS_NICK_NAME=MX
+# Define your default Client macro XML file
+MXJ_SCRIPT=key.xml
+
+###################################
+# End of user definables settings # 
+###################################
+
+######################################################################
+# Sourcing Setting File and Setting env.
+######################################################################
+Setting_Env() {  
+# Java and DATABASE SERVER settings file sourced.
+# Can be overwritten by option -i:setting_file
+
+if [ ! -f `dirname $0`/$SETTINGS_FILE ] ; then
+   $_ECHO "Mx G2000: Fatal ERROR: "
+   $_ECHO "          Environnement settings file: $SETTINGS_FILE not found !"
+   $_ECHO "          Or : forget, -i:setting_file."
+   exit 1
+fi
+ 
+. `dirname $0`/$SETTINGS_FILE
+RTISESSION_XWIN_DISP=$DISPLAY
+echo $RTISESSION_XWIN_DISP
+RTICACHESESSION_XWIN_DISP=$DISPLAY
+echo $RTICACHESESSION_XWIN_DISP
+
+#--- OS LIBARY environment.
+###########################
+# Path to OS Library.
+if [ "$OS_TYPE" = "SunOS" ]; then
+   LD_LIBRARY_PATH=/usr/lib/lwp:$LD_LIBRARY_PATH
+   export LD_LIBRARY_PATH
+fi
+
+#--- Java environment.
+######################
+# Path to the Java binaries, the 'libjvm.so' dynamic library
+# Set it up here: Uncomment and/or modify the following lines according to your setup.
+
+if [ "$JAVAHOME" = "" ] ; then
+   $_ECHO "Mx G2000: Fatal ERROR: "
+   $_ECHO "          Please specify the Java environment "
+   $_ECHO "          in the $SETTINGS_FILE script file"
+   exit 1
+fi
+
+if [ "$OS_TYPE" = "SunOS" ]; then
+   if [ -d $JAVAHOME/jre ]; then
+   case $PLATFORM_TYPE in
+        sparc )
+        JAVA_LIBRARY_PATH=$JAVAHOME/jre/lib/sparc
+        ;;
+        i386 )
+        JAVA_LIBRARY_PATH=$JAVAHOME/jre/lib/i386
+        ;;
+   esac
+   else
+   case $PLATFORM_TYPE in
+        sparc )
+        JAVA_LIBRARY_PATH=$JAVAHOME/lib/sparc
+        ;;
+        i386 )
+        JAVA_LIBRARY_PATH=$JAVAHOME/lib/i386
+        ;;
+   esac
+   fi
+   PATH=$JAVAHOME/bin:$PATH
+   LD_LIBRARY_PATH=$JAVA_LIBRARY_PATH:$LD_LIBRARY_PATH
+   LIB_EXT=so
+   export LD_LIBRARY_PATH
+   # Set Numeric format for SUN
+   LC_NUMERIC=en_US
+   export LC_NUMERIC
+fi
+if [ "$OS_TYPE" = "AIX" ]; then
+   JAVA_LIBRARY_PATH=$JAVAHOME/jre/bin/classic
+   PATH=$JAVAHOME/jre/sh:$JAVAHOME/sh:$PATH
+   LIBPATH=$JAVA_LIBRARY_PATH:$JAVAHOME/jre/bin:$LIBPATH
+   LIB_EXT=a
+   export LIBPATH
+   # Set Numeric format for IBM
+   LANG=en_US
+   export LANG
+   export AIXTHREAD_SCOPE=S
+   export AIXTHREAD_MUTEX_DEBUG=OFF
+   export AIXTHERAD_RWLOCK_DEBUG=OFF
+   export AIXTHREAD_COND_DEBUG=OFF
+   if [ "$LDR_CNTRL" != "" ] ; then
+      LDR_CNTRL_MAXDATA=`echo $LDR_CNTRL | grep "MAXDATA"`
+	  $_ECHO "WARNING: LDR_CNTRL is set with MAXDATA value:"$LDR_CNTRL
+   fi
+   # Settings to force JAVA to go through ipv4 stack instead of ipv6.
+   export IBM_JAVA_OPTIONS="-Djava.net.preferIPv4Stack=true  ${IBM_JAVA_OPTIONS}"  
+fi
+if [ "$OS_TYPE" = "HP-UX" ]; then
+   JAVA_LIBRARY_PATH=$JAVAHOME/jre/lib/PA_RISC2.0/hotspot
+   PATH=$JAVAHOME/bin:$PATH
+   SHLIB_PATH=$JAVA_LIBRARY_PATH:$SHLIB_PATH
+   LIB_EXT=sl
+   export SHLIB_PATH
+fi
+if [ "$OS_TYPE" = "Linux" ]; then
+   JAVA_VENDOR=`$JAVAHOME/jre/bin/java -version 2>&1 | grep IBM` 
+   if [ $? -ne 0 ] ; then 
+      #Assume we are using SUN JVM
+      JAVA_LIBRARY_PATH=$JAVAHOME/jre/lib/i386/client
+   else
+      #Assume we are using IBM JVM
+      JAVA_LIBRARY_PATH=$JAVAHOME/jre/bin/client
+   fi
+   LD_LIBRARY_PATH=$JAVA_LIBRARY_PATH:$LD_LIBRARY_PATH
+   PATH=$JAVAHOME/bin:$PATH
+   LIB_EXT=so
+   LC_NUMERIC=en_US
+   export LIB_EXT LC_NUMERIC LD_LIBRARY_PATH
+fi
+
+export PATH
+
+#--- Sybase environment used only by the launcher.
+##################################################
+
+if [ "$SYBASE" != "" ] ; then
+case $OS_TYPE in
+        SunOS )
+        SYBASE_OCS=OCS-12_5
+	LD_LIBRARY_PATH=$SYBASE/$SYBASE_OCS/lib:$SYBASE/lib:.:$LD_LIBRARY_PATH
+        export LD_LIBRARY_PATH
+        ;;
+        AIX )
+        SYBASE_OCS=OCS-12_5
+	LIBPATH=$SYBASE/$SYBASE_OCS/lib:.:$LIBPATH
+        export LIBPATH
+        ;;
+        HP-UX )
+        SYBASE_OCS=OCS-12_5
+	SHLIB_PATH=$SYBASE/$SYBASE_OCS/lib:$SYBASE/lib:.:$SHLIB_PATH
+        export SHLIB_PATH
+        ;;
+        Linux )
+	SYBASE_OCS=OCS-12_5
+	LD_LIBRARY_PATH=$SYBASE/$SYBASE_OCS/lib:$SYBASE/lib:.:$LD_LIBRARY_PATH
+        export LD_LIBRARY_PATH
+        ;;
+        * )
+        $_ECHO "Warning : Do not know how to handle this OS type $OS_TYPE."
+        ;;
+esac
+export SYBASE_OCS
+fi
+
+#--- Oracle environment.
+##################################################
+
+if [ "$ORACLE_HOME" != "" ] ; then
+case $OS_TYPE in  
+	SunOS )
+	LD_LIBRARY_PATH=$ORACLE_HOME/lib32:/usr/ccs/lib:.:$LD_LIBRARY_PATH
+	export LD_LIBRARY_PATH
+	LD_LIBRARY_PATH_64=$ORACLE_HOME/lib:$LD_LIBRARY_PATH_64
+	export LD_LIBRARY_PATH_64
+	PATH=$ORACLE_HOME/bin:$PATH
+	export PATH
+    	;;
+	AIX )
+	LIBPATH=$ORACLE_HOME/lib32:$ORACLE_HOME/lib:.:$LIBPATH
+	export LIBPATH
+        ;;
+	HP-UX )
+        SHLIB_PATH=$ORACLE_HOME/lib32:$ORACLE_HOME/lib:.:$SHLIB_PATH
+        export SHLIB_PATH
+        ;;
+	Linux )
+        LD_LIBRARY_PATH=$ORACLE_HOME/lib32:$ORACLE_HOME/lib:/usr/ccs/lib:.:$LD_LIBRARY_PATH
+        export LD_LIBRARY_PATH
+        ;;
+        * )
+        $_ECHO "Warning : Do not know how to handle this OS type $OS_TYPE."
+        ;;
+esac
+fi
+
+#--- File descriptors configuration.
+################################################
+ulimit -n $FD_LIMIT
+
+FILE_DESC=`ulimit -n`
+
+if [ $FILE_DESC -lt $FD_LIMIT ]; then
+   $_ECHO "Mx G2000: Fatal ERROR: "
+   $_ECHO "          Can not set file descriptors to $FD_LIMIT for current shell."
+   exit 1
+fi
+} # End of Setting_Env
+
+#--- Copying latest mxjboot.jar if needed.
+################################################
+
+if [ -f `dirname $0`/jar/$MXJ_BOOT_JAR ] ; then
+   diff ./$MXJ_BOOT_JAR jar/$MXJ_BOOT_JAR >/dev/null
+   if [ $? -ne 0 ] ; then
+      cp jar/$MXJ_BOOT_JAR .
+   fi
+fi
+
+# End of configuration, nothing to modify below.
+
+######################################################################
+# Mx G2000 File server
+######################################################################
+Fileserver() {
+
+Define_Log_File_Name fileserver
+Init_Log_File
+
+if [ "$FILESERVER_ARGS" != "" ];then
+   $_ECHO "Using specific args:$FILESERVER_ARGS"
+fi
+
+cd $FILESERVER_PATH
+
+JAVA_CMD="java $JVM_OPTION $FILESERVER_ARGS -cp $MXJ_HTTP_JAR murex.http.fileserver.FileServerJar /MXJ_PORT:$MXJ_FILESERVER_PORT /MXJ_JAR_FILE:$MXJ_JAR_FILE /MXJ_CONFIG_FILE:$MXJ_FILESERVER_CONFIG_FILE $EXTRA_ARGS"
+
+$_ECHO "Java cmd:\n$JAVA_CMD\n" >>../$LOG_PATH/$LOG_FILE.log
+$JAVA_CMD 2>&1 | $_TEE -a ../$LOG_PATH/$LOG_FILE.log &
+cd ..
+Update_Log_Pid_Files $! 0
+
+}
+
+######################################################################
+# MXJXmlserver
+######################################################################
+Xmlserver() {
+
+
+Define_Log_File_Name xmlserver
+Init_Log_File 
+
+if [ "$XML_SERVER_ARGS" != "" ];then
+   $_ECHO "Using specific args:$XML_SERVER_ARGS"
+fi
+if [ "$OS_TYPE" = "SunOS" ]; then
+   JVM_OPTION=" -server $JVM_OPTION"
+fi
+
+JAVA_CMD="java $JVM_OPTION $XML_SERVER_ARGS -cp $MXJ_BOOT_JAR -Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader /MXJ_CLASS_NAME:murex.xml.server.home.XmlHomeStartAll /MXJ_SITE_NAME:$MXJ_SITE_NAME /MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL /MXJ_HUB_NAME:$MXJ_HUB_NAME.$MXJ_SITE_NAME  $EXTRA_ARGS "
+
+$_ECHO "Java cmd:\n$JAVA_CMD\n" >>$LOG_PATH/$LOG_FILE.log
+$JAVA_CMD 2>&1 | $_TEE -a $LOG_PATH/$LOG_FILE.log &
+Update_Log_Pid_Files $! 0
+
+}
+
+######################################################################
+# HubHome 
+######################################################################
+HubHome() {
+#$_ECHO "hub home:/MXJ_HUB_NAME:$MXJ_HUB_NAME.$MXJ_SITE_NAME"
+Define_Log_File_Name hubhome 
+Init_Log_File
+
+if [ "$XML_SERVER_ARGS" != "" ];then
+   $_ECHO "Using specific args:$HUB_HOME_ARGS"
+fi
+ 
+JAVA_CMD="java $JVM_OPTION $HUB_HOME_ARGS -cp $MXJ_BOOT_JAR -Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader /MXJ_CLASS_NAME:murex.xml.server.hub.HubHome /MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL /MXJ_HUB_NAME:$MXJ_HUB_NAME.$MXJ_SITE_NAME $EXTRA_ARGS" 
+
+$_ECHO "Java cmd:\n$JAVA_CMD\n" >>$LOG_PATH/$LOG_FILE.log
+$JAVA_CMD 2>&1 | $_TEE -a $LOG_PATH/$LOG_FILE.log &
+Update_Log_Pid_Files $! 0
+
+}
+
+######################################################################
+# MXJXMLserver  XMLSNOHUB
+######################################################################
+XmlserverNoHub(){
+
+Define_Log_File_Name xmlservernohub
+Init_Log_File 
+
+if [ "$XML_SERVER_ARGS" != "" ];then
+   $_ECHO "Using specific args:$XML_SERVER_ARGS"
+fi
+if [ "$OS_TYPE" = "SunOS" ]; then
+   JVM_OPTION=" -server $JVM_OPTION"
+fi
+
+JAVA_CMD="java  $JVM_OPTION $XML_SERVER_ARGS -cp $MXJ_BOOT_JAR -Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader /MXJ_CLASS_NAME:murex.xml.server.home.XmlHome /MXJ_SITE_NAME:$MXJ_SITE_NAME /MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL $EXTRA_ARGS "
+
+$_ECHO "Java cmd:\n$JAVA_CMD\n" >>$LOG_PATH/$LOG_FILE.log
+$JAVA_CMD 2>&1 | $_TEE -a $LOG_PATH/$LOG_FILE.log &
+Update_Log_Pid_Files $! 0
+
+}
+
+######################################################################
+# MXJTransactionManager
+######################################################################
+TransactionManager() {
+
+
+Define_Log_File_Name transactionmanager
+Init_Log_File 
+
+JAVA_CMD="java -server $JVM_OPTION $XML_SERVER_ARGS -cp $MXJ_BOOT_JAR -Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader /MXJ_CLASS_NAME:murex.xml.server.tm.TransactionManagerHome /MXJ_SITE_NAME:$MXJ_SITE_NAME /MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL $EXTRA_ARGS"
+
+$_ECHO "Java cmd:\n$JAVA_CMD\n" >>$LOG_PATH/$LOG_FILE.log
+$JAVA_CMD 2>&1 | $_TEE -a $LOG_PATH/$LOG_FILE.log &
+Update_Log_Pid_Files $! 0
+
+}
+
+
+######################################################################
+# Launcher 
+######################################################################
+Launcher(){
+if [ "$SYBASE" = "" ] && [ "$ORACLE_HOME" = "" ] ; then
+   $_ECHO "Mx G2000: Launcher Fatal ERROR: please specify the SYBASE or ORACLE environment variable"
+   $_ECHO "          in the $SETTINGS_FILE script file"
+   exit 1
+fi
+
+if [ ! -f "$JAVA_LIBRARY_PATH/libjvm.$LIB_EXT" ] ; then
+   $_ECHO "Mx G2000: Launcher Fatal ERROR: "
+   $_ECHO "          $JAVA_LIBRARY_PATH/libjvm.$LIB_EXT not found "
+   $_ECHO "          file libjvm.$LIB_EXT not found, please check your $SETTINGS_FILE file !" 
+   exit 1
+fi 
+
+   JAVA_CLASSIC=
+
+#ldd mx
+
+Define_Log_File_Name launcher
+Init_Log_File 
+
+if [ "$LAUNCHER_ARGS" != "" ];then
+   $_ECHO "Using specific args:$LAUNCHER_ARGS"
+fi
+
+JVM_OPTION=$JVM_OPTION" -Xbootclasspath/p:./jar/xerces.jar:./jar/xalan.jar:./jar/jaxp-api.jar:./jar/xml-apis.jar -Djavax.xml.parsers.SAXParserFactory=org.apache.xerces.jaxp.SAXParserFactoryImpl "
+
+JAVA_CMD="java $JAVA_CLASSIC $JVM_OPTION $LAUNCHER_ARGS -cp $MXJ_BOOT_JAR -Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader /MXJ_CLASS_NAME:murex.xml.server.launcher.LauncherHome /MXJ_SITE_NAME:$MXJ_SITE_NAME /MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL /MXJ_CONFIG_FILE:$MXJ_CONFIG_FILE $EXTRA_ARGS" 
+
+$_ECHO "Java cmd:\n$JAVA_CMD\n" >>$LOG_PATH/$LOG_FILE.log
+$JAVA_CMD 2>&1 | $_TEE -a $LOG_PATH/$LOG_FILE.log &
+Update_Log_Pid_Files $! 0
+
+}
+
+######################################################################
+# MxMlExchange  
+######################################################################
+Mxmlexchange(){
+if [ "$SYBASE" = "" ] && [ "$ORACLE_HOME" = "" ] ; then
+   $_ECHO "Mx G2000: MxMlExchange Launcher Fatal ERROR: please specify the SYBASE or ORACLE environment variable"
+   $_ECHO "          in the $SETTINGS_FILE script file"
+   exit 1
+fi
+
+if [ ! -f "$JAVA_LIBRARY_PATH/libjvm.$LIB_EXT" ] ; then
+   $_ECHO "Mx G2000: Launcher Fatal ERROR: "
+   $_ECHO "          $JAVA_LIBRARY_PATH/libjvm.$LIB_EXT not found "
+   $_ECHO "          file libjvm.$LIB_EXT not found, please check your $SETTINGS_FILE file !"
+   exit 1
+fi
+
+   JAVA_CLASSIC=
+
+
+if [ "$MXML_SERVER_ARGS" != "$DEFAULT_MXML_SERVER_ARGS" ];then
+   $_ECHO "Using specific MXML_SERVER_ARGS args: $MXML_SERVER_ARGS"
+else
+   $_ECHO "Using default MXML_SERVER_ARGS args: $MXML_SERVER_ARGS"
+fi
+ 
+if [ "$MXML_JVM_ARGS" != "$DEFAULT_MXML_JVM_ARGS" ];then
+   $_ECHO "Using specific MXML_JVM_ARGS args: $MXML_JVM_ARGS"
+else
+   $_ECHO "Using default MXML_JVM_ARGS args: $MXML_JVM_ARGS"
+fi
+
+Define_Log_File_Name mxmlexchange
+Init_Log_File
+
+JAVA_CMD="java -verbose:gc -Xloggc:${LOG_PATH}/${LOG_FILE}.gc.log -XX:+PrintGCDetails -XX:+PrintGCTimeStamps $MXML_JVM_ARGS -Xbootclasspath/p:jar/xerces.jar:jar/xml-apis.jar:jar/xalan.jar -Djavax.xml.parsers.SAXParserFactory=org.apache.xerces.jaxp.SAXParserFactoryImpl $JAVA_CLASSIC $MXML_SERVER_ARGS -cp $MXJ_BOOT_JAR -Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader /MXJ_CLASS_NAME:murex.xml.server.launcher.LauncherHome /MXJ_SITE_NAME:$MXJ_SITE_NAME /MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL /MXJ_CONFIG_FILE:$MXJ_MXMLEX_CONFIG_FILE $EXTRA_ARGS" 
+
+$_ECHO "Java cmd:\n$JAVA_CMD\n" >>$LOG_PATH/$LOG_FILE.log
+$JAVA_CMD 2>&1 | $_TEE -a $LOG_PATH/$LOG_FILE.log &
+Update_Log_Pid_Files $! 0
+
+Define_Log_File_Name mxmlexchangesecondary
+Init_Log_File
+
+JAVA_CMD="java -verbose:gc -Xloggc:${LOG_PATH}/${LOG_FILE}.gc.log -XX:+PrintGCDetails -XX:+PrintGCTimeStamps $MXML_JVM_ARGS -Xbootclasspath/p:jar/xerces.jar:jar/xml-apis.jar:jar/xalan.jar -Djavax.xml.parsers.SAXParserFactory=org.apache.xerces.jaxp.SAXParserFactoryImpl $JAVA_CLASSIC $MXML_SERVER_ARGS -cp $MXJ_BOOT_JAR -Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader /MXJ_CLASS_NAME:murex.xml.server.launcher.LauncherHome /MXJ_SITE_NAME:$MXJ_SITE_NAME /MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL /MXJ_CONFIG_FILE:$MXJ_MXMLEX_CONFIG_FILE_SECONDARY $EXTRA_ARGS" 
+
+$_ECHO "Java cmd:\n$JAVA_CMD\n" >>$LOG_PATH/$LOG_FILE.log
+$JAVA_CMD 2>&1 | $_TEE -a $LOG_PATH/$LOG_FILE.log &
+Update_Log_Pid_Files $! 0
+
+Define_Log_File_Name mxmlexchangespaces
+Init_Log_File
+
+JAVA_CMD="java -verbose:gc -Xloggc:${LOG_PATH}/${LOG_FILE}.gc.log -XX:+PrintGCDetails -XX:+PrintGCTimeStamps $MXML_JVM_ARGS -Xbootclasspath/p:jar/xerces.jar:jar/xml-apis.jar:jar/xalan.jar -Djavax.xml.parsers.SAXParserFactory=org.apache.xerces.jaxp.SAXParserFactoryImpl $JAVA_CLASSIC $MXML_SERVER_ARGS -cp $MXJ_BOOT_JAR -Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader /MXJ_CLASS_NAME:murex.xml.server.launcher.LauncherHome /MXJ_SITE_NAME:$MXJ_SITE_NAME /MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL /MXJ_CONFIG_FILE:$MXJ_MXMLEX_CONFIG_FILE_SPACES $EXTRA_ARGS" 
+
+$_ECHO "Java cmd:\n$JAVA_CMD\n" >>$LOG_PATH/$LOG_FILE.log
+$JAVA_CMD 2>&1 | $_TEE -a $LOG_PATH/$LOG_FILE.log &
+Update_Log_Pid_Files $! 0
+
+}
+
+######################################################################
+# MDCS
+######################################################################
+MDCS_CACHE(){
+if [ "$SYBASE" = "" ] && [ "$ORACLE_HOME" = "" ] ; then
+   $_ECHO "Mx G2000: MDCS Launcher Fatal ERROR: please specify the SYBASE or ORACLE environment variable"
+   $_ECHO "          in the $SETTINGS_FILE script file"
+   exit 1
+fi
+
+if [ ! -f "$JAVA_LIBRARY_PATH/libjvm.$LIB_EXT" ] ; then
+   $_ECHO "Mx G2000: Launcher Fatal ERROR: "
+   $_ECHO "          $JAVA_LIBRARY_PATH/libjvm.$LIB_EXT not found "
+   $_ECHO "          file libjvm.$LIB_EXT not found, please check your $SETTINGS_FILE file !"
+   exit 1
+fi
+
+   JAVA_CLASSIC=
+
+Define_Log_File_Name mdcs
+Init_Log_File
+
+if [ "$MDCS_SERVER_ARGS" != "$DEFAULT_MDCS_SERVER_ARGS" ];then
+   $_ECHO "Using specific MDCS_SERVER_ARGS args: $MDCS_SERVER_ARGS"
+else
+   $_ECHO "Using default MDCS_SERVER_ARGS args: $MDCS_SERVER_ARGS"
+fi
+
+if [ "$MDCS_JVM_ARGS" != "$DEFAULT_MDCS_JVM_ARGS" ];then
+   $_ECHO "Using specific MDCS_JVM_ARGS args: $MDCS_JVM_ARGS"
+else
+   $_ECHO "Using default MDCS_JVM_ARGS args: $MDCS_JVM_ARGS"
+fi
+
+JVM_OPTION=$JVM_OPTION" -Xbootclasspath/p:./jar/xerces.jar:./jar/xalan.jar:./jar/jaxp-api.jar "
+
+JAVA_CMD="java $MDCS_JVM_ARGS $JVM_OPTION $JAVA_CLASSIC $MDCS_SERVER_ARGS -cp $MXJ_BOOT_JAR -Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader /MXJ_CLASS_NAME:murex.xml.server.launcher.LauncherHome /MXJ_SITE_NAME:$MXJ_SITE_NAME /MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL /MXJ_CONFIG_FILE:$MXJ_MDCS_CONFIG_FILE $EXTRA_ARGS" 
+
+$_ECHO "Java cmd:\n$JAVA_CMD\n" >>$LOG_PATH/$LOG_FILE.log
+$JAVA_CMD 2>&1 | $_TEE -a /$LOG_PATH/$LOG_FILE.log &
+Update_Log_Pid_Files $! 0
+
+}
+
+######################################################################
+# MDRS
+######################################################################
+MDRS_ENGINE(){
+
+if [ "$SYBASE" = "" ] && [ "$ORACLE_HOME" = "" ] ; then
+   $_ECHO "Mx G2000: MDRS Launcher Fatal ERROR: please specify the SYBASE or ORACLE environment variable"
+   $_ECHO "          in the $SETTINGS_FILE script file"
+   exit 1
+fi
+
+if [ ! -f "$JAVA_LIBRARY_PATH/libjvm.$LIB_EXT" ] ; then
+   $_ECHO "Mx G2000: Launcher Fatal ERROR: "
+   $_ECHO "          $JAVA_LIBRARY_PATH/libjvm.$LIB_EXT not found "
+   $_ECHO "          file libjvm.$LIB_EXT not found, please check your $SETTINGS_FILE file !"
+   exit 1
+fi
+
+JAVA_CLASSIC=
+
+Define_Log_File_Name mdrs
+Init_Log_File
+
+if [ "$MDRS_SERVER_ARGS" != "$DEFAULT_MDRS_SERVER_ARGS" ];then
+   $_ECHO "Using specific MDRS_SERVER_ARGS args: $MDRS_SERVER_ARGS"
+else
+   $_ECHO "Using default MDRS_SERVER_ARGS args: $MDRS_SERVER_ARGS"
+
+fi
+if [ "$MDRS_JVM_ARGS" != "$DEFAULT_MDRS_JVM_ARGS" ];then
+   $_ECHO "Using specific MDRS_JVM_ARGS args: $MDRS_JVM_ARGS"
+else
+   $_ECHO "Using default MDRS_JVM_ARGS args: $MDRS_JVM_ARGS"
+fi
+
+JVM_OPTION=$JVM_OPTION" -Xbootclasspath/p:./jar/xerces.jar:./jar/xalan.jar:./jar/jaxp-api.jar "
+
+JAVA_CMD="java $MDRS_JVM_ARGS $JVM_OPTION $JAVA_CLASSIC $MDRS_SERVER_ARGS -cp $MXJ_BOOT_JAR -Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader /MXJ_CLASS_NAME:murex.xml.server.launcher.LauncherHome /MXJ_SITE_NAME:$MXJ_SITE_NAME /MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL /MXJ_CONFIG_FILE:$MXJ_MDRS_CONFIG_FILE $EXTRA_ARGS"
+
+$_ECHO "Java cmd:\n$JAVA_CMD\n" >>$LOG_PATH/$LOG_FILE.log
+$JAVA_CMD 2>&1 | $_TEE -a $LOG_PATH/$LOG_FILE.log &
+Update_Log_Pid_Files $! 0
+
+}
+
+######################################################################
+# Olk
+######################################################################
+Olk(){
+if [ "$SYBASE" = "" ] && [ "$ORACLE_HOME" = "" ] ; then
+   $_ECHO "Mx G2000: Olk Launcher Fatal ERROR: please specify the SYBASE or ORACLE environment variable"
+   $_ECHO "          in the $SETTINGS_FILE script file"
+   exit 1
+fi
+
+OLK_EXEC_FILE=olk_exec.sh
+
+if [ ! -f `dirname $0`/$OLK_EXEC_FILE ] ; then
+   $_ECHO "Mx G2000: Fatal ERROR: "
+   $_ECHO "          Executable olk command file: $OLK_EXEC_FILE not found !"
+   exit 1
+fi
+if [ ! -x `dirname $0`/$OLK_EXEC_FILE ] ; then
+   $_ECHO "Mx G2000: Fatal ERROR: "
+   $_ECHO "          Olk command file: $OLK_EXEC_FILE not executable, change rights !"
+   exit 1
+fi
+
+Define_Log_File_Name olk
+Init_Log_File 
+. `dirname $0`/$OLK_EXEC_FILE $EXTRA_ARGS \
+2>&1 | $_TEE -a $LOG_PATH/$LOG_FILE.log &
+Update_Log_Pid_Files $! 1
+
+}
+
+######################################################################
+# RtImport
+######################################################################
+RtImport(){
+#Params : session or start or stop or rtifxg
+MXJ_RTIMPORT_CONFIG_PATH=public.mxres.mxcontribution.
+
+case "$1" in
+'session')
+
+#Used to set the display value
+$_ECHO $RTISESSION_XWIN_DISP >./RTISESSION_XWIN_DISP.tmp
+        java -cp $MXJ_BOOT_JAR \
+-Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader \
+/MXJ_CLASS_NAME:murex.xml.server.monitor.monitordisplay.Monitor /MXJ_SITE_NAME:$MXJ_SITE_NAME \
+/MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL /MXJ_PASSWORD:$MXJ_PASSWORD \
+/MXJ_CONFIG_FILE:"$MXJ_RTIMPORT_CONFIG_PATH"rtimportsession.mxres $EXTRA_ARGS
+
+        ;;
+
+'rticachesession')
+#set -x
+#Used to set the display value
+$_ECHO $RTICACHESESSION_XWIN_DISP >./RTICACHESESSION_XWIN_DISP.tmp
+        java -cp $MXJ_BOOT_JAR \
+-Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader \
+/MXJ_CLASS_NAME:murex.xml.server.monitor.monitordisplay.Monitor /MXJ_SITE_NAME:$MXJ_SITE_NAME \
+/MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL /MXJ_PASSWORD:$MXJ_PASSWORD \
+/MXJ_CONFIG_FILE:"$MXJ_RTIMPORT_CONFIG_PATH"rtimportcachesession.mxres $EXTRA_ARGS
+
+ ;;
+
+'rticachestart')
+        java -cp $MXJ_BOOT_JAR \
+-Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader \
+/MXJ_CLASS_NAME:murex.xml.server.monitor.monitordisplay.Monitor /MXJ_SITE_NAME:$MXJ_SITE_NAME \
+/MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL /MXJ_PASSWORD:$MXJ_PASSWORD \
+/MXJ_CONFIG_FILE:"$MXJ_RTIMPORT_CONFIG_PATH"rtimportcachestart.mxres $EXTRA_ARGS
+
+        ;;
+
+'rticachestop')
+        java -cp $MXJ_BOOT_JAR \
+-Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader \
+/MXJ_CLASS_NAME:murex.xml.server.monitor.monitordisplay.Monitor /MXJ_SITE_NAME:$MXJ_SITE_NAME \
+/MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL /MXJ_PASSWORD:$MXJ_PASSWORD \
+/MXJ_CONFIG_FILE:"$MXJ_RTIMPORT_CONFIG_PATH"rtimportcachestop.mxres $EXTRA_ARGS
+
+        ;;
+
+'rtiexportresults')
+        java -cp $MXJ_BOOT_JAR \
+-Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader \
+/MXJ_CLASS_NAME:murex.xml.server.monitor.monitordisplay.Monitor /MXJ_SITE_NAME:$MXJ_SITE_NAME \
+/MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL /MXJ_PASSWORD:$MXJ_PASSWORD \
+/MXJ_CONFIG_FILE:"$MXJ_RTIMPORT_CONFIG_PATH"rtimportexportresults.mxres $EXTRA_ARGS
+
+        ;;
+
+'start')
+        java -cp $MXJ_BOOT_JAR \
+-Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader \
+/MXJ_CLASS_NAME:murex.xml.server.monitor.monitordisplay.Monitor /MXJ_SITE_NAME:$MXJ_SITE_NAME \
+/MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL /MXJ_PASSWORD:$MXJ_PASSWORD \
+/MXJ_CONFIG_FILE:"$MXJ_RTIMPORT_CONFIG_PATH"rtimportstart.mxres $EXTRA_ARGS
+
+        ;;
+'stop')
+        java -cp $MXJ_BOOT_JAR \
+-Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader \
+/MXJ_CLASS_NAME:murex.xml.server.monitor.monitordisplay.Monitor /MXJ_SITE_NAME:$MXJ_SITE_NAME \
+/MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL /MXJ_PASSWORD:$MXJ_PASSWORD \
+/MXJ_CONFIG_FILE:"$MXJ_RTIMPORT_CONFIG_PATH"rtimportstop.mxres $EXTRA_ARGS
+        
+        ;;
+
+'fxgsession')
+#set -x
+#Used to set the display value
+$_ECHO $RTICACHESESSION_XWIN_DISP >./RTICACHESESSION_XWIN_DISP.tmp
+        java -cp $MXJ_BOOT_JAR \
+-Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader \
+/MXJ_CLASS_NAME:murex.xml.server.monitor.monitordisplay.Monitor /MXJ_SITE_NAME:$MXJ_SITE_NAME \
+/MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL /MXJ_PASSWORD:$MXJ_PASSWORD \
+/MXJ_CONFIG_FILE:"$MXJ_RTIMPORT_CONFIG_PATH"rtimportfixingsession.mxres $EXTRA_ARGS
+
+        ;;
+'fxgstart')
+        java -cp $MXJ_BOOT_JAR \
+-Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader \
+/MXJ_CLASS_NAME:murex.xml.server.monitor.monitordisplay.Monitor /MXJ_SITE_NAME:$MXJ_SITE_NAME \
+/MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL /MXJ_PASSWORD:$MXJ_PASSWORD \
+/MXJ_CONFIG_FILE:"$MXJ_RTIMPORT_CONFIG_PATH"rtimportfixingstart.mxres $EXTRA_ARGS
+
+        ;;
+'fxgstop')
+        java -cp $MXJ_BOOT_JAR \
+-Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader \
+/MXJ_CLASS_NAME:murex.xml.server.monitor.monitordisplay.Monitor /MXJ_SITE_NAME:$MXJ_SITE_NAME \
+/MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL /MXJ_PASSWORD:$MXJ_PASSWORD \
+/MXJ_CONFIG_FILE:"$MXJ_RTIMPORT_CONFIG_PATH"rtimportfixingstop.mxres $EXTRA_ARGS
+
+        ;;
+esac
+
+}
+
+######################################################################
+# MxParam
+######################################################################
+MxParam(){
+#Params : start or stop
+MXJ_MXPARAM_CONFIG_PATH=public.mxres.mxcontribution.
+if [ "$SYBASE" = "" ] && [ "$ORACLE_HOME" = "" ] ; then
+   $_ECHO "Mx G2000: Mxparam Launcher Fatal ERROR: please specify the SYBASE or ORACLE environment variable"
+   $_ECHO "          in the $SETTINGS_FILE script file"
+   exit 1
+fi
+
+case "$1" in
+'start')
+        java -cp $MXJ_BOOT_JAR \
+-Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader \
+/MXJ_CLASS_NAME:murex.xml.server.monitor.monitordisplay.Monitor /MXJ_SITE_NAME:$MXJ_SITE_NAME \
+/MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL /MXJ_PASSWORD:$MXJ_PASSWORD \
+/MXJ_CONFIG_FILE:"$MXJ_MXPARAM_CONFIG_PATH"mxparamstop.mxres $EXTRA_ARGS
+
+        sleep 15
+
+        java -cp $MXJ_BOOT_JAR \
+-Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader \
+/MXJ_CLASS_NAME:murex.xml.server.monitor.monitordisplay.Monitor /MXJ_SITE_NAME:$MXJ_SITE_NAME \
+/MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL /MXJ_PASSWORD:$MXJ_PASSWORD \
+/MXJ_CONFIG_FILE:"$MXJ_MXPARAM_CONFIG_PATH"mxpmanagementstop.mxres $EXTRA_ARGS
+
+        java -cp $MXJ_BOOT_JAR \
+-Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader \
+/MXJ_CLASS_NAME:murex.xml.server.monitor.monitordisplay.Monitor /MXJ_SITE_NAME:$MXJ_SITE_NAME \
+/MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL /MXJ_PASSWORD:$MXJ_PASSWORD \
+/MXJ_CONFIG_FILE:"$MXJ_MXPARAM_CONFIG_PATH"mxpmanagementstart.mxres $EXTRA_ARGS
+
+
+        java -cp $MXJ_BOOT_JAR \
+-Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader \
+/MXJ_CLASS_NAME:murex.xml.client.xmllayer.script.XmlRequestScript /MXJ_SITE_NAME:$MXJ_SITE_NAME \
+/MXJ_PLATFORM_NAME:$MXJ_PLATFORM_NAME /MXJ_PROCESS_NICK_NAME:$MXJ_PROCESS_NICK_NAME /MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL \
+/MXJ_CONFIG_FILE:"$MXJ_MXPARAM_CONFIG_PATH"mxparamstart.mxres $EXTRA_ARGS &
+
+        ;;
+'stop')
+        java -cp $MXJ_BOOT_JAR \
+-Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader \
+/MXJ_CLASS_NAME:murex.xml.server.monitor.monitordisplay.Monitor /MXJ_SITE_NAME:$MXJ_SITE_NAME \
+/MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL /MXJ_PASSWORD:$MXJ_PASSWORD \
+/MXJ_CONFIG_FILE:"$MXJ_MXPARAM_CONFIG_PATH"mxparamstop.mxres $EXTRA_ARGS
+
+        sleep 15
+
+        java -cp $MXJ_BOOT_JAR \
+-Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader \
+/MXJ_CLASS_NAME:murex.xml.server.monitor.monitordisplay.Monitor /MXJ_SITE_NAME:$MXJ_SITE_NAME \
+/MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL /MXJ_PASSWORD:$MXJ_PASSWORD \
+/MXJ_CONFIG_FILE:"$MXJ_MXPARAM_CONFIG_PATH"mxpmanagementstop.mxres $EXTRA_ARGS
+        
+        ;;
+esac
+
+}
+
+######################################################################
+# Murexnet 
+######################################################################
+Murexnet() {
+
+Define_Log_File_Name murexnet
+Init_Log_File 
+
+MXNET_MBX_CNT="mbx$MUREXNET_PORT.cnt"
+MXNET_MBX_CHK="mbx$MUREXNET_PORT.chk"
+MXNET_MBX_EVT="mbx$MUREXNET_PORT.evt"
+MXNET_MBX_IND="mbx$MUREXNET_PORT.ind"
+MXNET_MBX_NOD="mbx$MUREXNET_PORT.nod"
+MXNET_MBX_ERR="mbx$MUREXNET_PORT.err"
+MXNET_MBX_IERR="mbx$MUREXNET_PORT.ierr"
+
+if [ -f $MXNET_MBX_CNT ] ; then
+  rm $MXNET_MBX_CNT
+fi
+if [ -f $MXNET_MBX_CHK ] ; then
+  rm $MXNET_MBX_CHK
+fi
+if [ -f $MXNET_MBX_EVT ] ; then
+  rm $MXNET_MBX_EVT
+fi
+if [ -f $MXNET_MBX_IND ] ; then
+  rm $MXNET_MBX_IND
+fi
+if [ -f $MXNET_MBX_NOD ] ; then
+  rm $MXNET_MBX_NOD
+fi
+if [ -f $MXNET_MBX_ERR ] ; then
+  rm $MXNET_MBX_ERR
+fi
+if [ -f $MXNET_MBX_IERR ] ; then
+  rm $MXNET_MBX_IERR
+fi
+$_ECHO "Cleanup done."
+
+if [ "$MUREXNET_ARGS" != "" ];then
+   $_ECHO "Using specific args:$MUREXNET_ARGS"
+fi
+
+MXNET_CMD="./murexnet /ipaddr:$MUREXNET_PORT /stdout:stdout /stderr:stderr $MUREXNET_ARGS $EXTRA_ARGS"
+
+$_ECHO "Murexnet cmd:\n$MXNET_CMD\n" >>$LOG_PATH/$LOG_FILE.log
+$MXNET_CMD 2>&1 | $_TEE -a $LOG_PATH/$LOG_FILE.log &
+Update_Log_Pid_Files $! 0
+
+}
+
+######################################################################
+# MxContribution
+######################################################################
+MxContribution(){
+if [ "$SYBASE" = "" ] && [ "$ORACLE_HOME" = "" ] ; then
+   $_ECHO "Mx G2000: MxContribution Launcher Fatal ERROR: please specify the SYBASE or ORACLE environment variable"
+   $_ECHO "          in the $SETTINGS_FILE script file"
+   exit 1
+fi
+
+if [ ! -f "$JAVA_LIBRARY_PATH/libjvm.$LIB_EXT" ] ; then
+   $_ECHO "Mx G2000: Launcher Fatal ERROR: "
+   $_ECHO "          $JAVA_LIBRARY_PATH/libjvm.$LIB_EXT not found "
+   $_ECHO "          file libjvm.$LIB_EXT not found, please check your $SETTINGS_FILE file !"
+   exit 1
+fi
+
+   JAVA_CLASSIC=
+
+if [ "$OS_TYPE" = "SunOS" ]; then
+   JVM_OPTION=" -server $JVM_OPTION"
+fi
+
+#ldd mx
+
+Define_Log_File_Name mxcontrib
+Init_Log_File
+
+JAVA_CMD="java $JVM_OPTION -Xmx150M -Xms150M $JAVA_CLASSIC -cp $MXJ_BOOT_JAR -Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader /MXJ_CLASS_NAME:murex.xml.server.launcher.LauncherHome /MXJ_SITE_NAME:$MXJ_SITE_NAME /MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL /MXJ_CONFIG_FILE:$MXJ_CONTRIBUTION_CONFIG_FILE $EXTRA_ARGS" 
+
+$_ECHO "Java cmd:\n$JAVA_CMD\n" >>$LOG_PATH/$LOG_FILE.log
+$JAVA_CMD 2>&1 | $_TEE -a ../$LOG_PATH/$LOG_FILE.log &
+Update_Log_Pid_Files $! 0
+
+}
+
+######################################################################
+# MxActivityFeeder
+######################################################################
+MxActivityFeeder(){
+if [ "$SYBASE" = "" ] && [ "$ORACLE_HOME" = "" ] ; then
+   $_ECHO "Mx G2000: MxActivityFeeder Launcher Fatal ERROR: please specify the SYBASE or ORACLE environment variable"
+   $_ECHO "          in the $SETTINGS_FILE script file"
+   exit 1
+fi
+
+if [ ! -f "$JAVA_LIBRARY_PATH/libjvm.$LIB_EXT" ] ; then
+   $_ECHO "Mx G2000: Launcher Fatal ERROR: "
+   $_ECHO "          $JAVA_LIBRARY_PATH/libjvm.$LIB_EXT not found "
+   $_ECHO "          file libjvm.$LIB_EXT not found, please check your $SETTINGS_FILE file !"
+   exit 1
+fi
+
+   JAVA_CLASSIC=
+
+#ldd mx
+
+Define_Log_File_Name feeder
+Init_Log_File
+
+JVM_OPTION=$JVM_OPTION" -Xbootclasspath/p:./jar/xerces.jar:./jar/xalan.jar:./jar/jaxp-api.jar:./jar/xml-apis.jar -Djavax.xml.parsers.SAXParserFactory=org.apache.xerces.jaxp.SAXParserFactoryImpl "
+
+JAVA_CMD="java $JVM_OPTION -Xmx150M -Xms150M $JAVA_CLASSIC -cp $MXJ_BOOT_JAR -Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader /MXJ_CLASS_NAME:murex.xml.server.launcher.LauncherHome /MXJ_SITE_NAME:$MXJ_SITE_NAME /MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL /MXJ_CONFIG_FILE:$MXJ_ACTIVITY_FEEDER_CONFIG_FILE $EXTRA_ARGS" 
+
+$_ECHO "Java cmd:\n$JAVA_CMD\n" >>$LOG_PATH/$LOG_FILE.log
+$JAVA_CMD 2>&1 | $_TEE -a $LOG_PATH/$LOG_FILE.log &
+Update_Log_Pid_Files $! 0
+
+}
+
+######################################################################
+# Client
+######################################################################
+Client() {
+
+MXJ_BOOT_JAR=$MXJ_BOOT_JAR
+java $JVM_OPTION -cp $MXJ_BOOT_JAR \
+-Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_GUI_JAR_FILE murex.rmi.loader.RmiLoader \
+/MXJ_CLASS_NAME:murex.gui.xml.XmlGuiClientBoot /MXJ_SITE_NAME:$MXJ_SITE_NAME \
+/MXJ_PLATFORM_NAME:$MXJ_PLATFORM_NAME /MXJ_PROCESS_NICK_NAME:$MXJ_PROCESS_NICK_NAME \
+/MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL $EXTRA_ARGS
+exit $?
+}
+
+######################################################################
+# Client with macro
+######################################################################
+ClientMacro() {
+
+MXJ_BOOT_JAR=$MXJ_BOOT_JAR
+java $JVM_OPTION -cp $MXJ_BOOT_JAR \
+-Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader \
+/MXJ_CLASS_NAME:murex.gui.api.script.ApiScript /MXJ_SITE_NAME:$MXJ_SITE_NAME \
+/MXJ_PLATFORM_NAME:$MXJ_PLATFORM_NAME /MXJ_PROCESS_NICK_NAME:$MXJ_PROCESS_NICK_NAME \
+/MXJ_SCRIPT_READ_FROM:$MXJ_SCRIPT /MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL $EXTRA_ARGS
+exit $?
+}
+
+
+######################################################################
+# Monitor
+######################################################################
+Monitor() {
+
+java $JVM_OPTION -cp $MXJ_BOOT_JAR \
+-Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader \
+/MXJ_CLASS_NAME:murex.xml.server.monitor.monitordisplay.MonitorDisplay /MXJ_SITE_NAME:$MXJ_SITE_NAME \
+/MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL /MXJ_PASSWORD:$MXJ_PASSWORD  $EXTRA_ARGS
+exit $?
+}
+######################################################################
+# Script Monitor
+######################################################################
+Script_Monitor() {
+
+java $JVM_OPTION -cp $MXJ_BOOT_JAR \
+-Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader \
+/MXJ_CLASS_NAME:murex.xml.server.monitor.monitordisplay.Monitor /MXJ_SITE_NAME:$MXJ_SITE_NAME \
+/MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL /MXJ_PASSWORD:$MXJ_PASSWORD /MXJ_CONFIG_FILE:$MXJ_CONFIG_FILE $EXTRA_ARGS
+exit $?
+}
+######################################################################
+# Remote Diagnostic Tool
+######################################################################
+MxRdt() {
+
+OutputDir=logs/MxRDT
+export OutputDir
+MxRDT_LogFile=${OutputDir}/MxRDT_log.html
+
+if [ ! -d "$OutputDir" ]; then
+        mkdir "$OutputDir"
+        Result=$?
+        if [ "$Result" != "0" ]; then
+           echo "Error creating output directory. Exit."
+           exit $Result
+        fi
+else
+        touch $MxRDT_LogFile
+        Result=$?
+        if [ "$Result" != "0" ]; then
+          echo "Could not write in output directory. Exit. "
+          exit $Result
+        fi
+fi
+
+echo '<H3> <FONT COLOR="#336699"> MxRDT Log </FONT> </H4> <pre>' > $MxRDT_LogFile
+. ./mxrdt 2>&1 | tee -a $MxRDT_LogFile
+Result=$?
+# echo '</pre>' >> $MxRDT_LogFile
+exit $Result
+}
+######################################################################
+# XmlRequestScript
+######################################################################
+XmlRequestScript() {
+
+java $JVM_OPTION -cp $MXJ_BOOT_JAR \
+-Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader \
+/MXJ_CLASS_NAME:murex.xml.client.xmllayer.script.XmlRequestScript /MXJ_SITE_NAME:$MXJ_SITE_NAME \
+/MXJ_PLATFORM_NAME:$MXJ_PLATFORM_NAME /MXJ_PROCESS_NICK_NAME:$MXJ_PROCESS_NICK_NAME /MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL \
+/MXJ_CONFIG_FILE:$MXJ_CONFIG_FILE $EXTRA_ARGS
+exit $?
+}
+######################################################################
+# PasswordEncryption
+######################################################################
+PasswordEncryption() {
+
+java $JVM_OPTION -cp $MXJ_BOOT_JAR \
+-Djava.rmi.server.codebase=http://$MXJ_FILESERVER_HOST:$MXJ_FILESERVER_PORT/$MXJ_JAR_FILE murex.rmi.loader.RmiLoader \
+/MXJ_CLASS_NAME:murex.xml.cryptography.GuiPassword  $EXTRA_ARGS
+exit $?
+}
+
+######################################################################
+#
+# Beginning of script
+#
+######################################################################
+error(){
+        $_ECHO "$0: Error: $*"
+}
+
+Define_Log_File_Name() {
+# Params : ID of Service 
+ID=$1
+LOG_FILE=
+
+case $ID in  
+        fileserver )
+                LOG_FILE=$MACHINE_NAME.$ID.$MXJ_FILESERVER_PORT
+        ;;
+        xmlserver )
+                LOG_FILE=$MACHINE_NAME.$ID.$MXJ_HUB_NAME.$MXJ_SITE_NAME
+        ;;
+        xmlservernohub )
+                LOG_FILE=$MACHINE_NAME.$ID.$MXJ_SITE_NAME
+        ;;
+        hubhome )
+                LOG_FILE=$MACHINE_NAME.$ID.$MXJ_HUB_NAME.$MXJ_SITE_NAME
+        ;; 
+        transactionmanager )
+                LOG_FILE=$MACHINE_NAME.$ID.$MXJ_PORT.$MXJ_SITE_NAME
+        ;;
+        launcher )
+                if [ "$MXJ_INSTALLATION_CODE" = "" ] ; then
+                   LOG_FILE=$MACHINE_NAME.$ID.$MXJ_SITE_NAME.$MXJ_CONFIG_FILE
+                else
+                   LOG_FILE=$MACHINE_NAME.$ID.$MXJ_SITE_NAME.$MXJ_CONFIG_FILE.$MXJ_INSTALLATION_CODE
+                fi
+        ;;
+        mxmlexchange )
+                LOG_FILE=$MACHINE_NAME.$ID.$MXJ_SITE_NAME.$MXJ_MXMLEX_CONFIG_FILE
+        ;;
+        mxmlexchangesecondary )
+                LOG_FILE=$MACHINE_NAME.$ID.$MXJ_SITE_NAME.$MXJ_MXMLEX_CONFIG_FILE_SECONDARY
+        ;;
+        mxmlexchangespaces )
+                LOG_FILE=$MACHINE_NAME.$ID.$MXJ_SITE_NAME.$MXJ_MXMLEX_CONFIG_FILE_SPACES
+        ;;       
+        murexnet )
+                LOG_FILE=$MACHINE_NAME.$ID.$MUREXNET_PORT
+        ;;
+        mdcs )
+                LOG_FILE=$MACHINE_NAME.$ID.$MXJ_SITE_NAME.$MXJ_MDCS_CONFIG_FILE
+        ;;
+        mdrs )
+                LOG_FILE=$MACHINE_NAME.$ID.$MXJ_SITE_NAME.$MXJ_MDRS_CONFIG_FILE
+        ;;
+        olk )
+                LOG_FILE=$MACHINE_NAME.$ID
+        ;;
+        mxparam )
+                LOG_FILE=$MACHINE_NAME.$ID
+        ;;
+        rtimport )
+                LOG_FILE=$MACHINE_NAME.$ID
+        ;;
+        mxcontrib )
+                LOG_FILE=$MACHINE_NAME.$ID
+        ;;
+        feeder )
+                LOG_FILE=$MACHINE_NAME.$ID.$MXJ_SITE_NAME.$MXJ_ACTIVITY_FEEDER_CONFIG_FILE
+         ;;
+        * )
+                $_ECHO "Warning : Do not know how to handle this service."
+                $_ECHO "          No way to stop it except manually."
+        ;;
+esac
+
+}
+
+Init_Log_File() {
+#Params : None
+
+if [ ! -d $LOG_PATH ] ; then
+   mkdir $LOG_PATH
+fi
+if [ ! -d $LOG_PATH ] ; then
+   $_ECHO "Mx G2000: Error : "
+   $_ECHO "          Log directory :$LOG_PATH does not exist !"
+   $_ECHO "          Please create it."
+   exit 1
+fi
+if [ ! -w $LOG_PATH ] ; then
+   $_ECHO "Mx G2000: Error : "
+   $_ECHO "          Log directory :$LOG_PATH does not have good rights !"
+   $_ECHO "          Please add write permission."
+   exit 1
+fi
+if [ -f $LOG_PATH/$LOG_FILE.pid ] ; then
+  $_ECHO "The service may already run, please check below."
+  Process_Status
+#  exit 1
+  if [ -f $LOG_PATH/$LOG_FILE.pid ] ; then
+        $_ECHO "\nThe service already run."
+        exit 1
+  else
+        $_ECHO "\nCleanup done \nLaunching Process" 
+  fi
+fi
+
+if [ $APPEND_LOG = 1 ] ; then
+        $_ECHO "---------------\n" >> $LOG_PATH/$LOG_FILE.log
+else 
+        $_ECHO "---------------\n" > $LOG_PATH/$LOG_FILE.log
+fi
+$_ECHO "Start time `date` by $USER_NAME\n" >> $LOG_PATH/$LOG_FILE.log
+$_ECHO "File descriptors raised to `ulimit -n` for current cmd.\n" >> $LOG_PATH/$LOG_FILE.log
+$_ECHO "Java option used : $JVM_OPTION " >>$LOG_PATH/$LOG_FILE.log
+java $JVM_OPTION -version 2>&1 | $_TEE -a $LOG_PATH/$LOG_FILE.log
+$_ECHO "" >>$LOG_PATH/$LOG_FILE.log
+$_ECHO "" 
+}
+
+Update_Log_Pid_Files() {
+#Param 1 : The process ID number  $! 
+#Param 2 : If the process is a shell exec 1 else 0
+
+sleep 1 #Needed to give time to the process to defunct.
+
+PID_NB=
+if [ "$OS_TYPE" = "Linux" ]; then
+   _PID_NB=
+   PTEE_PID_NB=
+   PTEE_PID_NB=`$_PS -eaf | $_AWK ' \$2 == '$!' ' | $_AWK '{ print \$3 }'`
+# DSLECOMTE-DEF0023546-REMOTE_SHELL_LINUX
+   _PID_NB=`$_PS -eaf | $_AWK ' \$3 == '$PTEE_PID_NB' ' | $_AWK ' \$2 != '$!' '`
+# FSLECOMTE-DEF0023546-REMOTE_SHELL_LINUX
+   PID_NB=`echo $_PID_NB | $_AWK '{ print \$2 }'`
+else 
+   PID_NB=`$_PS -eaf | $_AWK ' \$3 == '$!' ' | $_AWK '{ print \$2 }'`
+fi
+
+if [ $2 = 1 ] ; then
+   PID_NB=`$_PS -eaf | $_AWK ' \$3 == '$PID_NB' ' | $_AWK '{ print \$2 }'`
+fi
+if [ "$PID_NB" = "" ] ; then
+   $_ECHO "\n"
+   $_ECHO "Mx G2000: Fatal ERROR: "
+   $_ECHO "          The service did not start."
+   $_ECHO "          See messages on your screen or on $LOG_PATH/$LOG_FILE.log file."
+   $_ECHO "\nAt `date`\n" >> $LOG_PATH/$LOG_FILE.log
+   $_ECHO "  Service failed to start (message above)\n" >> $LOG_PATH/$LOG_FILE.log
+   $_ECHO "\n---------------\n" >> $LOG_PATH/$LOG_FILE.log
+   if [ -f $LOG_PATH/$LOG_FILE.pid ] ; then
+      $_ECHO "WARNING !!\n The service may be already launched.\n"  | $_TEE -a $LOG_PATH/$LOG_FILE.log
+   fi 
+else
+   $_ECHO "\n***\nPID:$PID_NB\n***\n" | $_TEE -a $LOG_PATH/$LOG_FILE.log
+   $_ECHO "Logging stdout and stderr to $LOG_PATH/$LOG_FILE.log\n\n" 
+   $_ECHO $PID_NB > $LOG_PATH/$LOG_FILE.pid
+fi
+}
+
+Stop_Service() {
+# Params : ID of Service 
+Define_Log_File_Name $1
+if [ ! -f $LOG_PATH/$LOG_FILE.pid ] ; then
+   $_ECHO "Service $1 doesn't seem's to run !"
+   exit 1
+fi
+for file in  `$_LS $LOG_PATH/$LOG_FILE.pid`
+do
+        FILE_OWNER=`$_LS_L $file | $_AWK '{print $3}'`
+        if [ "$FILE_OWNER" != "$USER_NAME" ]; then
+           $_ECHO " Not owner of $LOG_PATH/$LOG_FILE.pid"
+           $_ECHO " Service not Stopped."
+        else
+           KILL_PID=`cat $file`
+           $_ECHO "Found process pid $KILL_PID file `basename $file` "
+           kill -9 $KILL_PID >/dev/null
+           if [ $? -eq 0 ] ; then 
+              $_ECHO "***************" >> $LOG_PATH/$LOG_FILE.log
+              $_ECHO "Service stopped at `date` by $USER_NAME" | $_TEE -a $LOG_PATH/$LOG_FILE.log
+              $_ECHO "***************\n" >> $LOG_PATH/$LOG_FILE.log
+              rm $file
+           else 
+              $_ECHO "Process ID not found"
+              rm $file
+           fi
+        fi
+done
+
+}
+
+Kill_All() {
+if [ ! -f $LOG_PATH/*.pid ] ; then
+   $_ECHO "No Service running."
+   exit 0
+else
+   for file in `$_LS $LOG_PATH/${MACHINE_NAME}*.pid`
+      do
+        FILE_OWNER=`$_LS_L $file | $_AWK '{print $3}'`
+        if [ "$FILE_OWNER" != "$USER_NAME" ]; then
+           $_ECHO " Not owner of $LOG_PATH/$file"
+           $_ECHO " Service not Stopped."
+        else
+           LOG_FILE=`$_LS $file | sed 's/.pid//'`
+           SERVICE=`echo $file | cut -d"." -f2`
+           KILL_PID=`cat $file`
+           $_ECHO "Found process pid $KILL_PID file `basename $file` "
+           kill -9 $KILL_PID >/dev/null
+           if [ $? -eq 0 ] ; then
+              $_ECHO "***************" >> $LOG_FILE.log
+              $_ECHO "Service stopped at `date` by $USER_NAME" | $_TEE -a $LOG_FILE.log
+              $_ECHO "***************\n" >> $LOG_FILE.log
+              rm $file
+           else
+              $_ECHO "Process ID not found, assuming process is dead"
+              rm $file
+           fi
+        fi
+      done
+fi
+}
+
+Process_Status() {
+# Params : None
+
+if [ ! -f $LOG_PATH/*.pid ] ; then
+   $_ECHO "No Service running."
+   exit 0
+fi
+
+$_ECHO "\nFound running service(s) :"
+for files in `$_LS $LOG_PATH/*.pid`
+do
+        SERVICE=`echo $files | sed s/\.pid//`
+        SERVICE=`basename $SERVICE`
+        SERVICE_LOCATION=`echo  $SERVICE | cut -d"." -f1`
+        if [  "$SERVICE_LOCATION" = "$MACHINE_NAME" ] ; then
+            PID_NB=`cat $files`
+            # FOUND=`$_PS -eaf | $_AWK ' \$2 == '$PID_NB' '`
+            FOUND=`$_PS -fp $PID_NB | grep $PID_NB`
+            if [ ! "$FOUND" = "" ] ; then
+            INFOS=`echo $FOUND | $_AWK '{ if ( \$5 ~ /:/ ) {  print " UID: "\$1 " PID: "\$2  " CPUTIME: "\$7 " STIME: "\$5 } else { print " UID: "\$1 " PID: "\$2  " CPUTIME: "\$8 " STIME: "\$5" " \$6 } }'` 
+                   $_ECHO " $SERVICE infos : \n\t$INFOS"
+            else
+                   $_ECHO " $SERVICE not running, removing PID file." 
+                   rm $files
+                fi
+        else
+            $_ECHO " $SERVICE infos : \n\tService located on $SERVICE_LOCATION\n\tRun status from $SERVICE_LOCATION"
+        fi 
+
+done
+
+} 
+
+help() {
+Setting_Env
+# Params : None
+        cat <<END_OF_HELP | more
+
+$0 usage:
+Version : $MAJOR_VERSION.$MINOR_VERSION
+
+`basename $0` [ -option ] [ Param ]* [ -k | -killall ]
+
+Options:  -i:file               : use file as the setting.
+          -fs | -filserver      : launch file server service.
+          -xmls | -xmlserver    : launch xmlserver server service.
+          -xmlsnh | -xmlsnohub  : launch xmlserver server service without a hub.
+          -hub                  : launch hub service.
+          -tm                   : launch transactionmanager server service.
+          -l | -launcher        : launch launcher server service.
+          -mxml | -mxmlex       : launch mxmlexchange server service.
+          -mxnet | -murexnet    : launch murexnet server service.
+          -olk | -import        : launch olk import server service.
+          -mxp | -mxparam       : launch mxparam server service.
+          -rtisession | -rtimportsession : launch a session of rtimport server service.
+          -rticachesession | -rtimportcachesession : launch a session of rtimport-cache server service.
+          -rticache | -rtimportcache      : launch rtimport cache server service
+          -rtifxgsession | -rtimportfixingsession : launch a session of rtimport fixing server service.
+          -rti | -rtimport      : launch rtimport server service
+          -rtifxg | -rtimportfixing : launch rtifixing import server service.
+          -rtiexportresults     : launch rtimport export results service
+          -mxcontrib | -mpcs    : launch mxcontribution server service.  
+          -feeder               : launch activity feeder server service. 
+          -mdcs | -cache        : launch MDCS cache service.
+          -mdrs                 : launch MarketData repository service
+          -client | -mx         : launch mx client.
+          -clientmacro | -mxmacro : launch mx client in macro mode, use 
+                                    /MXJ_SCRIPT_READ_FROM:script.xml to 
+                                    change default script file.
+          -monit | -monitor     : launch monitor.
+          -smonit | -smonitor   : launch monitor in script mode (need 
+                                  extra arg /MXJ_CONFIG_FILE:script_file.xml).
+          -mxrdt                : remote diagnostic tool
+          -xmlreq | -xmlrequest : launch xmlRequestScript class (need 
+                                  extra arg /MXJ_CONFIG_FILE:xmlRequestScript.xml).
+          -p | -password        : launch password encryption.
+          
+          -k | -kill            : option to stop service.
+          -killall              : stop all running services.
+          -s | -status [-loop]  : show services status [every $LOOP_TIME sec].
+ 
+          -j:[java option] | -jopt:[java option]  : add a JVM option, can be used
+                                                    as many times as options needed.
+          -h | -help            : this help.
+
+        To stop a service use the same param as the start and add -k
+          ex :  to stop $0 -fs 
+                   use  $0 -fs -k  
+                to stop $0 -l /MXJ_CONFIG_FILE:mylauncher.mxres
+                   use  $0 -l -k /MXJ_CONFIG_FILE:mylauncher.mxres
+                use $0 -s to see running services.
+                use $0 -killall to stop all running services.
+Param used : 
+        Setting File:$SETTINGS_FILE
+        /MXJ_FILESERVER_HOST:$MXJ_FILESERVER_HOST
+        /MXJ_FILESERVER_PORT:$MXJ_FILESERVER_PORT
+        /MXJ_JAR_FILE:$MXJ_JAR_FILE
+        /MXJ_PORT:$MXJ_PORT (set for backward comatibility)
+        /MXJ_HOST:$MXJ_HOST (set for backward comatibility)
+        /MXJ_SITE_NAME:$MXJ_SITE_NAME
+        /MXJ_HUB_NAME:$MXJ_HUB_NAME
+        /MXJ_PLATFORM_NAME:$MXJ_PLATFORM_NAME
+        /MXJ_PROCESS_NICK_NAME:$MXJ_PROCESS_NICK_NAME
+        /MXJ_CONFIG_FILE:$MXJ_CONFIG_FILE
+        /MXJ_MXMLEX_CONFIG_FILE:$MXJ_MXMLEX_CONFIG_FILE
+        /MXJ_CONTRIBUTION_CONFIG_FILE:$MXJ_CONTRIBUTION_CONFIG_FILE
+        /MXJ_LOG_LEVEL:$MXJ_LOG_LEVEL
+        /MXJ_SCRIPT_READ_FROM:$MXJ_SCRIPT
+        MUREXNET_PORT:$MUREXNET_PORT
+Specific $SETTINGS_FILE settings:
+        File Server            :$FILESERVER_ARGS
+        XmlServer args         :$XML_SERVER_ARGS
+        Hub args               :$HUB_HOME_ARGS
+        MxMlExchange args      :$MXML_SERVER_ARGS
+        Launcher args          :$LAUNCHER_ARGS
+        Murexnet args          :$MUREXNET_ARGS
+        Real Time host display :$RTISESSION_XWIN_DISP
+		MDCS args              :$MDCS_ARGS
+
+Environment:
+        LOG_PATH:$LOG_PATH
+        APPEND_LOG:$APPEND_LOG
+        JAVAHOME:$JAVAHOME
+        SYBASE:$SYBASE
+        SYBASE_OCS:$SYBASE_OCS
+        ORACLE_HOME:$ORACLE_HOME
+
+END_OF_HELP
+$_ECHO "\nFile descriptors raised to `ulimit -n` for current shell.\n"
+case $OS_TYPE in
+        SunOS )
+        $_ECHO "\nLD_LIBRARY_PATH=$LD_LIBRARY_PATH\n"
+        ;;
+        AIX )
+        $_ECHO "\nLIBPATH=$LIBPATH\n"
+        ;;
+        HP-UX )
+        $_ECHO "\nSHLIB_PATH=$SHLIB_PATH\n"
+        ;;
+        Linux )
+        $_ECHO "\nLD_LIBRARY_PATH=$LD_LIBRARY_PATH\n"
+        ;;
+        * )
+        $_ECHO "Warning : Do not know how to handle this OS type $OS_TYPE."
+        ;;
+esac
+
+$_ECHO `java -version`
+if [ "$SYBASE" != "" ] ; then
+   if [ ! -f $SYBASE/$SYBASE_OCS/bin/isql ] ; then
+      $_ECHO "Mx G2000: isql not found, please check the SYBASE environment variable"
+      $_ECHO "          in the $SETTINGS_FILE script file"
+   else
+      $SYBASE/$SYBASE_OCS/bin/isql -v
+   fi
+fi
+if [ "$ORACLE_HOME" != "" ] ; then
+   if [ ! -f $ORACLE_HOME/bin/sqlplus ] ; then
+      $_ECHO "Mx G2000: sqlplus not found, please check the ORACLE_HOME environment variable"
+      $_ECHO "          in the $SETTINGS_FILE script file"
+   else
+      $ORACLE_HOME/bin/sqlplus -V
+   fi
+fi
+exit 0
+}
+
+getParams() {
+while [ $# != 0 ]
+        do
+        ARG0=$1
+
+        PARAM=`echo $ARG0 | cut -f1 -d":"`
+        VALUE=`echo $ARG0 | cut -f2- -d":"`
+
+        if [ "$VALUE" = "" ] ; then
+           help
+           exit 0
+        fi
+        case $PARAM in
+            -help | /help | -h | /h | -env | /env)
+                help
+                exit 0
+                ;;
+            -i )
+                SETTINGS_FILE=$VALUE
+                if [ $# -eq 1  ] ; then
+                   help
+                   exit 0
+                fi
+                ;;
+            -xmls | -xmlserver )
+                XMLS=1
+                ;;
+            -xmlsnohub | -xmlservernohub | -xmlsnh )
+                XMLSNOHUB=1
+                ;;
+            -hub )
+                HUB=1
+                ;;
+            -tm )
+                TM=1
+                ;;
+            -fs | -filserver )
+                FS=1
+                ;;
+            -l | -launcher )
+                LAUNCHER=1
+                ;;
+            -mxml | -mxmlex )
+                MXMLEX=1
+                ;;
+            -mdcs | -cache )
+                MDCS=1
+                ;;
+            -mdrs )
+                MDRS=1
+                ;;
+            -olk | -import ) 
+                OLK=1
+                ;;
+            -mxp | -mxparam )
+                MXPARAM=1
+                ;;
+            -rtisession | -rtimportsession )
+                RTISESSION=1
+                ;;
+            -rticachesession | -rtimportcachesession )
+                RTICACHESESSION=1
+                ;;
+            -rtifxgsession | -rtimportfixingsession )
+                RTIFXGSESSION=1
+                ;;
+            -rti | -rtimport )
+                RTIMPORT=1
+                ;;
+            -rticache | -rtimportcache )
+                RTIMPORTCACHE=1
+                ;;
+            -rtifxg | -rtimportfixing )
+                RTIFXG=1
+                ;;
+            -rtiexportresults )
+                RTIEXPORTRESULTS=1
+                ;;                
+            -mxcontrib | -mpcs )
+                MXCONTRIB=1
+                ;;
+            -feeder )
+                FEEDER=1
+                ;;
+            -mxnet | -murexnet )
+                MUREXNET=1
+                ;;
+            -client | -mx )
+                CLIENT=1
+                ;;
+            -clientmacro | -mxmacro )
+                CLIENTMACRO=1
+                ;;
+            -monit | -monitor )
+                MONIT=1
+                ;;
+            -smonit | -smonitor )
+                MXJ_CONFIG_FILE=""
+                export MXJ_CONFIG_FILE
+                S_MONIT=1
+                ;;
+            -mxrdt)
+                MXRDT=1
+                ;;
+            -xmlreq | -xmlrequest )
+                MXJ_CONFIG_FILE=""
+                export MXJ_CONFIG_FILE
+                XMLREQ=1
+                ;;
+            -p | -password )
+                PASSWORD=1
+                ;;
+            -stop | stop | -kill | kill | -k | k )
+                STOP=1
+                ;;
+            -stopall | stopall | -killall | killall )
+                STOPALL=1
+                ;;
+            -status | status | -s | s )
+                STATUS=1
+                ;;
+            -loop )
+                LOOP=1
+                ;;
+            -j | j | -jopt | jopt )
+                JVM_OPTION=$JVM_OPTION" "$VALUE
+                $_ECHO "Using JVM option:$VALUE "
+                ;;
+            /MXJ_PORT | -MXJ_PORT )
+                MXJ_PORT=$VALUE
+                $_ECHO "Using $PARAM:$VALUE"
+                ;;
+            /MXJ_HOST | -MXJ_HOST )
+                MXJ_HOST=$VALUE 
+                $_ECHO "Using $PARAM:$VALUE"
+                ;;
+            /MXJ_SITE_NAME | -MXJ_SITE_NAME )
+                MXJ_SITE_NAME=$VALUE 
+                $_ECHO "Using $PARAM:$VALUE"
+                ;;
+            /MXJ_HUB_NAME | -MXJ_HUB_NAME )
+                MXJ_HUB_NAME=$VALUE 
+                $_ECHO "Using $PARAM:$VALUE"
+                ;;
+            /MXJ_FILESERVER_HOST | -MXJ_FILESERVER_HOST )
+                MXJ_FILESERVER_HOST=$VALUE
+                $_ECHO "Using $PARAM:$VALUE"
+                ;;
+            /MXJ_FILESERVER_PORT | -MXJ_FILESERVER_PORT )
+                MXJ_FILESERVER_PORT=$VALUE 
+                $_ECHO "Using $PARAM:$VALUE"
+                ;;
+            /MXJ_JAR_FILE | -MXJ_JAR_FILE )
+                MXJ_JAR_FILE=$VALUE 
+                $_ECHO "Using $PARAM:$VALUE"
+                ;;
+            /MXJ_GUI_JAR_FILE | -MXJ_GUI_JAR_FILE )
+                MXJ_GUI_JAR_FILE=$VALUE 
+                $_ECHO "Using $PARAM:$VALUE"
+                ;;
+            /MXJ_CONFIG_FILE | -MXJ_CONFIG_FILE )
+                NBP=`echo $VALUE | $_AWK -F. '{ print NF }'`
+                if [ "$NBP" = "2" ] && [ "$LAUNCHER" = "1" ] ; then
+                   VALUE=`echo $MXJ_CONFIG_FILE | $_AWK  -F. '{ print \$1"."\$2"."\$3"." }'`$VALUE
+                   echo "Guessing config file is $VALUE"
+                fi 
+                if [ "$NBP" = "1" ] && [ "$LAUNCHER" = "1" ] ; then
+                   VALUE=`echo $MXJ_CONFIG_FILE | $_AWK  -F. '{ print \$1"."\$2"."\$3"." }'`${VALUE}.mxres
+                   echo "Guessing config file is $VALUE"
+                fi
+                MXJ_CONFIG_FILE=$VALUE
+                MXJ_MXMLEX_CONFIG_FILE=$VALUE 
+                MXJ_CONTRIBUTION_CONFIG_FILE=$VALUE
+                $_ECHO "Using $PARAM:$VALUE"
+                ;;
+            /MXJ_MXMLEX_CONFIG_FILE | -MXJ_MXMLEX_CONFIG_FILE )
+                MXJ_MXMLEX_CONFIG_FILE=$VALUE
+                $_ECHO "Using $PARAM:$VALUE"
+                ;;
+            /MXJ_MDCS_CONFIG_FILE | -MXJ_MDCS_CONFIG_FILE )
+                MXJ_MDCS_CONFIG_FILE=$VALUE
+                $_ECHO "Using $PARAM:$VALUE"
+                ;;
+            /MXJ_MDRS_CONFIG_FILE | -MXJ_MDRS_CONFIG_FILE )
+                MXJ_MDRS_CONFIG_FILE=$VALUE
+                $_ECHO "Using $PARAM:$VALUE"
+                ;;
+            /MXJ_CONTRIBUTION_CONFIG_FILE | MXJ_CONTRIBUTION_CONFIG_FILE )
+                MXJ_CONTRIBUTION_CONFIG_FILE=$VALUE
+                $_ECHO "Using $PARAM:$VALUE"
+                ;;
+            /MXJ_ACTIVITY_FEEDER_CONFIG_FILE | MXJ_ACTIVITY_FEEDER_CONFIG_FILE )
+                MXJ_ACTIVITY_FEEDER_CONFIG_FILE=$VALUE
+                $_ECHO "Using $PARAM:$VALUE"
+                ;;
+            /MXJ_PLATFORM_NAME | -MXJ_PLATFORM_NAME )
+                MXJ_PLATFORM_NAME=$VALUE 
+                $_ECHO "Using $PARAM:$VALUE"
+                ;;
+            /MXJ_PROCESS_NICK_NAME | -MXJ_PROCESS_NICK_NAME )
+                MXJ_PROCESS_NICK_NAME=$VALUE 
+                $_ECHO "Using $PARAM:$VALUE"
+                ;;
+            /MXJ_LOG_LEVEL| -MXJ_LOG_LEVEL)
+                MXJ_LOG_LEVEL=$VALUE 
+                $_ECHO "Using $PARAM:$VALUE"
+                ;;
+            /MXJ_POLICY_FILE | -MXJ_POLICY_FILE )
+                MXJ_POLICY_FILE=$VALUE 
+                $_ECHO "Using $PARAM:$VALUE"
+                ;;
+            /MXJ_SCRIPT_READ_FROM| -MXJ_SCRIPT_READ_FROM)
+                MXJ_SCRIPT=$VALUE 
+                $_ECHO "Using $PARAM:$VALUE"
+                ;;
+            /MXJ_INSTALLATION_CODE| -MXJ_INSTALLATION_CODE )
+                MXJ_INSTALLATION_CODE=$VALUE
+                $_ECHO "Using $PARAM:$VALUE"
+                EXTRA_ARGS="$EXTRA_ARGS $ARG0"
+                ;;
+            /MUREXNET_PORT| -MUREXNET_PORT| MUREXNET_PORT)
+                MUREXNET_PORT=$VALUE
+                $_ECHO "Using $PARAM:$VALUE"
+                ;;
+            /MXRDT_OUTPUT_FILENAME| -MXRDT_OUTPUT_FILENAME)
+                MXRDT_OUTPUT_FILENAME=$VALUE
+                $_ECHO "Using $PARAM:$VALUE"
+                ;;
+
+            * )
+                EXTRA_ARGS="$EXTRA_ARGS $ARG0"
+                ;;
+        esac
+        shift
+done
+}
+
+#Main
+
+XMLS=0
+XMLSNOHUB=0
+HUB=0
+TM=0
+FS=0
+LAUNCHER=0
+MXMLEX=0
+OLK=0
+MDCS=0
+MDRS=0
+MXPARAM=0
+RTISESSION=0
+RTICACHESESSION=0
+RTIFXGSESSION=0
+RTIMPORT=0
+RTIMPORTCACHE=0
+RTIFXG=0
+RTIEXPORTRESULTS=0
+MXCONTRIB=0
+FEEDER=0
+MUREXNET=0
+CLIENT=0
+CLIENTMACRO=0
+MONIT=0
+S_MONIT=0
+MXRDT=0
+PASSWORD=0
+STOP=0
+STOPALL=0
+STATUS=0
+LOOP=0
+XMLREQ=0
+JVM_OPTION="-Xmx512M"
+
+if [ "$OS_TYPE" = "AIX" ]; then
+  JVM_OPTION=$JVM_OPTION" -Djavax.xml.parsers.SAXParserFactory=org.apache.xerces.jaxp.SAXParserFactoryImpl "
+  JVM_OPTION=$JVM_OPTION" -Djavax.xml.parsers.DocumentBuilderFactory=org.apache.xerces.jaxp.DocumentBuilderFactoryImpl "
+  JVM_OPTION=$JVM_OPTION" -Djavax.xml.transform.TransformerFactory=org.apache.xalan.processor.TransformerFactoryImpl "
+fi
+
+MXJ_INSTALLATION_CODE=""
+EXTRA_ARGS=
+
+if [ $# = 0 ] ; then
+        help;
+        exit 0 ;
+fi
+
+Setting_Env
+getParams $*
+
+if [ "$EXTRA_ARGS" != "" ] ; then
+        $_ECHO "Extra arguments used: $EXTRA_ARGS"
+fi
+
+if [ $FS = 1 ] ; then
+        if [ $STOP = 1 ] ; then
+                Stop_Service fileserver 
+        else
+                Fileserver $*;
+        fi
+fi
+if [ $TM = 1 ] ; then
+        if [ $STOP = 1 ] ; then
+                Stop_Service transactionmanager
+        else
+                TransactionManager $*;
+        fi
+fi
+if [ $XMLS = 1 ] ; then
+        if [ $STOP = 1 ] ; then
+                Stop_Service xmlserver
+        else
+                Xmlserver $*;
+        fi
+fi
+if [ $XMLSNOHUB = 1 ] ; then
+        if [ $STOP = 1 ] ; then
+                Stop_Service xmlservernohub
+        else
+                XmlserverNoHub $*;
+        fi
+fi
+
+if [ $HUB = 1 ] ; then
+        if [ $STOP = 1 ] ; then
+                Stop_Service hubhome
+        else
+                HubHome $*;
+        fi
+fi
+
+if [ $LAUNCHER = 1 ] ; then
+        if [ $STOP = 1 ] ; then
+                Stop_Service launcher
+        else
+                Launcher $*;
+        fi
+fi
+if [ $MXMLEX = 1 ] ; then
+        if [ $STOP = 1 ] ; then
+                Stop_Service mxmlexchange
+                Stop_Service mxmlexchangesecondary
+                Stop_Service mxmlexchangespaces
+        else
+                Mxmlexchange $*;
+        fi
+fi
+if [ $MDCS = 1 ] ; then
+        if [ $STOP = 1 ] ; then
+                Stop_Service mdcs
+        else
+                MDCS_CACHE $*;
+        fi
+fi
+if [ $MDRS = 1 ] ; then
+        if [ $STOP = 1 ] ; then
+                Stop_Service mdrs
+        else
+                MDRS_ENGINE $*;
+        fi
+fi
+if [ $OLK = 1 ] ; then
+        if [ $STOP = 1 ] ; then
+               Stop_Service olk
+        else
+                Olk $*;
+        fi
+fi
+if [ $MXPARAM = 1 ] ; then
+        if [ $STOP = 1 ] ; then
+                #Stop_Service mxparam
+                MxParam stop $*;
+        else
+                MxParam start $*;
+        fi
+fi
+if [ $RTISESSION = 1 ] ; then
+                RtImport session $*;
+fi
+if [ $RTICACHESESSION = 1 ] ; then
+                RtImport rticachesession $*;
+fi
+if [ $RTIFXGSESSION = 1 ] ; then
+                RtImport fxgsession $*;
+fi
+
+if [ $RTIMPORT = 1 ] ; then
+        if [ $STOP = 1 ] ; then
+                #Stop_Service rtimport
+                RtImport stop $*;
+        else
+                RtImport start $*;
+        fi
+fi
+if [ $RTIMPORTCACHE = 1 ] ; then
+        if [ $STOP = 1 ] ; then
+                #Stop_Service rtimportcache
+                RtImport rticachestop $*;
+        else
+                RtImport rticachestart $*;
+        fi
+fi
+if [ $RTIEXPORTRESULTS = 1 ] ; then
+                RtImport rtiexportresults $*;
+fi
+
+if [ $RTIFXG = 1 ] ; then
+        if [ $STOP = 1 ] ; then
+                #Stop_Service rtimport
+                RtImport fxgstop $*;
+        else
+                RtImport fxgstart $*;
+        fi
+fi
+if [ $MXCONTRIB = 1 ] ; then
+        if [ $STOP = 1 ] ; then
+                Stop_Service mxcontrib
+        else
+                MxContribution $*;
+        fi
+fi
+if [ $FEEDER = 1 ] ; then
+        if [ $STOP = 1 ] ; then
+                Stop_Service feeder
+        else
+                MxActivityFeeder $*;
+        fi
+fi
+if [ $MUREXNET = 1 ] ; then
+        if [ $STOP = 1 ] ; then
+                Stop_Service murexnet
+        else
+                Murexnet $*;
+        fi
+fi
+if [ $CLIENT = 1 ] ; then
+        Client $*;
+fi
+if [ $CLIENTMACRO = 1 ] ; then
+        ClientMacro $*;
+fi
+if [ $MONIT = 1 ] ; then
+        Monitor $*;
+fi
+if [ $S_MONIT = 1 ] ; then
+        Script_Monitor $*;
+fi
+if [ $MXRDT = 1 ] ; then
+        MxRdt
+fi
+if [ $XMLREQ = 1 ] ; then
+        XmlRequestScript $*;
+fi
+if [ $PASSWORD = 1 ] ; then
+        PasswordEncryption $*;
+fi
+if [ $STATUS = 1 ] ; then
+
+        Process_Status $*;
+        while [ $LOOP = 1 ] 
+        do
+                $_ECHO "\nSleeping $LOOP_TIME sec"
+                sleep $LOOP_TIME
+                Process_Status $*
+        done
+fi
+if [ $STOPALL = 1 ] ; then
+        Kill_All
+fi
+#END of SCRIPT
