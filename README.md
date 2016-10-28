@@ -2325,3 +2325,1057 @@ data_conversion  dm_maketer_ext   dm_static_fdr   fdr_db_objects  Makefilebuild.
 datamart         dm_mv_ext        dm_sv_fdr       Feeders         markit            murex_lib           old_code             prorisk         varutils
 dm_acct_fdr      dm_mv_fdr        dm_test         fm_tools        mats              murfi               olink                proteus         web
 [1477277@dl1101 poseidon]$
+
+
+## application SERVER
+						
+在B/S模式中，服务器端用servlet来为web客户的请求提供服务。Servlet服务扩展了web服务器的功能，即由web服务器接收和处理客户请求，然后把请求传给servlet,并把servlet处理的结果返回给客户。						
+servlet 容器与servlet之间的接口是由java.servlet.api定义的，在此api中定义了servlet的各种方法，这些方法在servlet生命周期的不同阶段被servlet容器调用，tomcat服务器由一系列可配置的组件构成，tomcat组件可以在conf/server.xml文件当中进行配置。组件包括：						
+						
+<Server> => 代表整个servelet容器，是tomcat实例的顶层元素。						
+      <Service>						
+			<Connector>			
+			     客户与服务器之间的通信接口			
+			</Connector>			
+			<Connector>			
+			</Connector>			
+			<Engine> => 处理在同一个<Service>中所有<Connector>元素接受到的用户请求			
+				<Host>  => 每个<Host>元素定义了一个虚拟主机，它可以包含一个或多个web应用。		
+					<Context path=''> 	
+					     为特定的web应用处理所有用户请求，每个<Context>元素代表了运行在虚拟机上的单个web应用。	
+						 每个web应用有唯一的Context，当java web应用运行时，Servlet容器为每个web应用创建唯一的ServletContext对象，它被整个web应用中所有的组件共享
+					</Context>	
+					...	
+					<Context> 	
+					</Context>	
+				</Host>		
+			</Engine>			
+      </Service>						
+	  					
+	  <Service>					
+	  </Service>					
+</Server>						
+						
+						
+Murex采用C/S结构实现的，所以Server端没有Tomcat服务器，需要我们自己用TCP/IP socket来实现类似于TOMCAT的功能。						
+类似一个应用服务器中可以部署多个应用程序，我们的服务器端也可以配置和部署多个Murex应用，以为团队提供多个测试环境。						
+						
+Murex Clinet 先通过RMI技术发送请求给fileServer as All Resource Files all are deployed on file server.. 						
+Once File server received request it will load sites.mxres (./fs/public/mxres/sites/) to fetch the XML server & hub host & port 						
+						
+XML server就相当于Tomcat服务器，顾名思义使用XML技术接收和处理客户请求，同时负责Services的 registration 和 lifecycle management (service’s creation, checking, termination etc..)						
+hub server 相当于一个虚拟机？						
+						
+Declare, customize and launch different type of services						
+Existing in File server as e.g. launcherall.mxres under ./fs/public/mxres/common/						
+./launchmxj.app –l / -s / -k						
+Service processes are located on the host of the launcher						
+						
+The features of Murex can work only when the corresponding services are running on the service host.						
+						
+						
+						
+						
+						
+						
+						
+						
+						
+magapp15a:/shared/home/murex$ less  .profile　　　或　　　　magapp15a:/shared/home/posop$ less  .profile						
+	# Control-M related alias					
+	alias jobdefs='cd /shared/opt/SCB/pos_eod/live/config/jobdefs'					
+	alias ctm='cd /shared/opt/SCB/pos_eod/live'					
+	alias varex='cd /shared/opt/SCB/pos_varex/live'					
+	alias varu='cd /shared/opt/SCB/pos_varutils/live'					
+	alias dev1utils='cd /shared/opt/pos/mxg/mxg_bodev1/scb/utils'					
+	alias sgutils='cd /shared/opt/pos/mxg/mxg_bodev1/scb/utils'					
+	alias dev2utils='cd /shared/opt/pos/mxg/mxg_bodev2/scb/utils'					
+	alias dailyutils='cd /shared/opt/pos/mxg/mxg_bau_daily/scb/utils'					
+	alias dev1rep='cd /shared/opt/pos/mxg/mxg_bodev1/scb/reports'					
+	alias dev2rep='cd /shared/opt/pos/mxg/mxg_bodev2/scb/reports'					
+	alias dailyrep='cd /shared/opt/pos/mxg/mxg_bau_daily/scb/reports'					
+	alias l='ls -lrt'					
+						
+"
+"						
+magapp15a:/shared/home/murex$ less .env_alias						
+	alias mxghome='cd /shared/opt/pos/mxg'					
+						
+	# Environment and POS Market Rates aliases ( 2006 )					
+	# -- Murex related aliases (2006)					
+	alias cdd='cd fs/public/mxres/common/dbconfig'					
+	alias cdl='cd fs/public/mxres/common'					
+	alias cds='cd fs/public/mxres/sites'					
+						
+						
+						
+						
+						
+						
+						
+						
+						
+						
+						
+						
+						
+						
+http://uklpadinf01a.uk.standardchartered.com/ganglia/?c=MUREX%20G2000&m=load_one&r=hour&s=by%20name&hc=4&mc=2						
+						
+						
+						
+						
+						
+						
+						
+						
+	Restart Server: must use murex not posop					
+						
+						
+	magapp14a:/shared/opt/pos/mxg/mxg_com_daily$ ../mxg_stop_services.sh					
+						
+	magapp14a:/shared/opt/pos/mxg/mxg_eod$ ../mxg_start_services.sh Y YY Y Y &					
+						
+						
+	launchmxj.app -s					
+						
+						
+						
+	MXG_FDR :-					
+	Login: magapp15a: as murex					
+	cd /shared/mrxdev_pos/mxg_fdr/live					
+	/shared/mrxdev_pos/mxg_pp_services_main.sh fdr stop					
+	/shared/mrxdev_pos/mxg_pp_services_main.sh fdr start					
+						
+						
+						
+						
+						
+						
+						
+mx						
+	/shared/opt/SCB/dev_launchers/binaries/live/mx					
+
+
+## MUREX CLIENT
+On Windows Operation System Murex Client is a .bat file as shown below		
+########################################		
+@ECHO OFF		
+		
+REM Mx G2000 Client Launcher		
+REM Mofify this script to match your java and server environnement		
+REM For 2.2.8 and 2.2.9		
+REM V2.3		
+		
+setlocal		
+		
+cd %TEMP%		
+		
+echo %TEMP%		
+		
+if exist mxjboot.jar goto create		
+		
+echo open gmsitnfs.uk.standardchartered.com>>getboot.cmd		
+echo posop>>getboot.cmd		
+echo posop123>>getboot.cmd		
+echo bin>>getboot.cmd		
+echo cd /shared/opt/SCB/pos_murex/live/utils/jar>>getboot.cmd		
+echo cd /shared/home/murex/MxSCBTools/tomcat/webapps/mxmlmonit/clients>>getboot.cmd		
+echo get mxjboot.jar>>getboot.cmd		
+echo quit>>getboot.cmd		
+ftp -s:getboot.cmd		
+del getboot.cmd		
+		
+:create		
+		
+IF EXIST "C:\Progra~1\MXG2000\J2RE1.4.2_08" (		
+SET JAVAHOME="C:\Progra~1\MXG2000\J2RE1.4.2_08"		
+) ELSE (		
+SET JAVAHOME="C:\Progra~1\Java\j2re1.4.2_08"		
+)		
+		
+SET MXJ_FILESERVER_HOST=magapp15a.uk.standardchartered.com		
+SET MXJ_FILESERVER_PORT=21201		
+SET MXJ_SITE_NAME=default		
+SET MXJ_DESTINATION_SITE_NAME=mxg2k_fdr_live		
+SET MXJ_PLATFORM_NAME=MX		
+SET MXJ_PROCESS_NICK_NAME=MXG2K_FDR_LIVE		
+		
+		
+SET PATH=%JAVAHOME%\jre\bin;%JAVAHOME%\jre\bin\classic;%JAVAHOME%\bin;%JAVAHOME%\bin\classic;%PATH%		
+		
+SET PATH=%PATH%;bin		
+SET MXJ_JAR_FILELIST=murex.download.guiclient.download		
+SET MXJ_POLICY=java.policy		
+SET MXJ_BOOT=mxjboot.jar		
+SET MXJ_CONFIG_FILE=client.xml		
+		
+IF EXIST jar\%MXJ_BOOT% copy jar\%MXJ_BOOT% . >NUL		
+		
+title %~n0 FS:%MXJ_FILESERVER_HOST%:%MXJ_FILESERVER_PORT%/%MXJ_JAR_FILELIST%  Xml:%MXJ_SITE_NAME% /PLATF:%MXJ_PLATFORM_NAME% /NNAME:%MXJ_PROCESS_NICK_NAME%		
+		
+java -Xmx512m -cp %MXJ_BOOT% -Djava.security.policy=%MXJ_POLICY% -Djava.rmi.server.codebase=http://%MXJ_FILESERVER_HOST%:%MXJ_FILESERVER_PORT%/%MXJ_JAR_FILELIST% murex.rmi.loader.RmiLoader /MXJ_SITE_NAME:%MXJ_SITE_NAME% /MXJ_DESTINATION_SITE_NAME:%MXJ_DESTINATION_SITE_NAME% /MXJ_CLASS_NAME:murex.gui.xml.XmlGuiClientBoot /MXJ_PLATFORM_NAME:%MXJ_PLATFORM_NAME% /MXJ_PROCESS_NICK_NAME:%MXJ_PROCESS_NICK_NAME% /MXJ_CONFIG_FILE:%MXJ_CONFIG_FILE% %1 %2 %3 %4 %5 %6		
+		
+title Command Prompt		
+endlocal		
+pause		
+########################################		
+解析：该批处理程序是通过java命令行启动客户端的murex.rmi.loader.RmiLoader 程序		
+		
+Java命令行基本结构：		
+java [ options ] class [ argument ... ] 或 java [ options ] -jar file.jar [ argument ... ]		
+		
+说明：		
+（1）options ：命令行选项。启动器有一组标准选项，当前的运行时环境支持这些选项并且将来的版本也将支持它们。还有一组其它的非标准选项是特定于目前的虚拟机实现的，将来可能要有变化。非标准选项以 -X 打头。		
+     #标准选项：		
+     .-cp 类路径,指定一个用于查找类文件的列表，它由目录、 JAR 归档文件和 ZIP 归档文件组成。类路径项用分号 (;) 分隔。指定 -classpath 或 -cp 将覆盖 CLASSPATH		
+     .-D属性=值,设置系统属性的值。		
+     .-jar JAR归档文件的名称，注意：JAR 归档文件的名称不是启动类的类名。启动类由 Main-Class 清单头指定。JAR 文件是所有用户类的源，其它的用户类路径设置将被忽略。		
+     .-verbosee或-verbose:class,显示每个所加载的类的信息。		
+     .-verbose:gc ,报告每个垃圾收集事件。 		
+     .-verbose:jni ,报告有关本地方法的使用和其它 Java 平台相关代码接口活动的信息。		
+     .-version ,显示版本信息并退出。 		
+     .-? 或-help ,显示用法信息并退出。 		
+     .-X ,显示非标准选项的有关信息并退出。 		
+     #非标准选项：		
+     .-Xbootclasspath:自举类路径 ,指定以分号分隔的目录、 JAR 归档文件和 ZIP 归档文件列表，用以查找自举类文件。这些自举类文件用来取代 JDK 1.2 软件中所包括的自举类文件。 		
+     .-Xdebug ,启动激活的调试器。Java 解释器将输出一密码供 jdb 使用。有关详细资料及程序示例，请参阅 jdb 说明。 		
+     .-Xnoclassgc ,禁用类垃圾收集 		
+     .-Xms$V ,指定内存分配池的初始容量$V。该值$V必须大于 1000。要使该值扩大 1000 倍，须附加上字母 k，要使该值扩大一百万倍，须附加上字母 m。缺省值为 1m。 		
+     .-Xmx$v ,指定内存分配池的最大容量$V。该值$V必须大于 1000。要将它扩大 1000 倍，须附加上字母 k，要将该值扩大一百万倍，须附加上字母 m。缺省值为 16m。 		
+     .-Xrunhprof[:help][:<子选项>=<值>,...] ,启用 cpu 、堆或监视器监控操作。该选项后面一般跟着一个列表，该列表由以逗号分隔的 "<子选项>=<值>" 对所组成。运行命令 java -Xrunhprof:help 可获得子选项及其缺省值的列表。 		
+     .-Xrs ,减少操作系统信号的使用。 		
+     .-Xcheck:jni ,对 Java 平台相关代码接口函数进行额外检查。 		
+		
+（2）class ：要调用的类名。 或 file.jar ：要调用的 jar 文件名。只与 -jar 一起使用。		
+     缺省情况下，第一个非选项参数是要调用的类名。应当使用全限定类名。如果指定了 -jar 选项，那么第一个非选项参数是 JAR 归档文件的名称，该归档文件包含应用程序的类和资源文件以及 Main-Class 清单头指定的启动类。 		
+（3）argument ：传给 main 函数的参数。 类名或 JAR 文件名后的非选项参数被传递给 main 函数。		
+（4）%MXJ_PLATFORM_NAME%: 批处理中定义的变量		
+%1 %2 %3 %4 %5 %6：表示参数，参数是指在运行批处理文件时在文件名后加的以空格（或者Tab）分隔的字符串。变量可以从%0到%9，%0表示批处理命令本身，其它参数字符串用%1到%9顺序表示。%~dp0：表示批处理所在目录。		
+例1：C:根目录下有一批处理文件名为f.bat，内容为：@echo offformat %1如果执行C:\>f a:那么在执行f.bat时，%1就表示a:，这样format %1就相当于format a:，于是上面的命令运行时实际执行的是format a:		
+例2：C:根目录下一批处理文件名为t.bat，内容为:@echo offtype %1type %2那么运行C:\>t a.txt b.txt%1 : 表示a.txt%2 : 表示b.txt于是上面的命令将顺序地显示a.txt和b.txt文件的内容。		
+		
+		
+将必要的参数（脚本中标红的部分）通过java命令传入启动程序，不同的参数值启动了不同的murex环境的客户端程序，参数值配置规则存放在渣打的文件服务器中。		
+		
+Take mxg_frd environment as example		
+		login file server of SCB: magapp15a.uk
+		magapp15a:mxghome
+		magapp15a:cd /shared/opt/pos/mxg_fdr/live
+		magapp15a:/shared/opt/pos/mxg_fdr/live$ less mxg2000_settings.sh (找到参数对应的值)
+		###################################
+		#!/bin/sh
+		
+		# Murex: Jun  2003
+		# launchmxj.app 2.10 version
+		# Mx G2000 Environment variables setup
+		# set -x
+		
+		TODAY="`date +'%Y%m%d_%H%M%S'`"
+		
+		OS_TYPE=`uname`
+		OS_PLATFORM=`uname -p`
+		
+		if [ "$OS_TYPE" = "SunOS" ]; then
+		        case ${OS_PLATFORM} in
+		        sparc)
+		                JAVAHOME=/shared/opt/jdk/pos/j2sdk1.4.2_13_64/jre
+		                ;;
+		        i386)
+		                JAVAHOME=/shared/opt/jdk/pos/j2sdk1.4.2_13_x86
+		                ;;
+		        esac
+		fi
+		if [ "$OS_TYPE" = "AIX" ]; then
+		        JAVAHOME=/shared/opt/jdk/pos/j2sdk1.4.2_13_64/jre
+		fi
+		if [ "$OS_TYPE" = "HP-UX" ]; then
+		        JAVAHOME=/shared/opt/jdk/pos/j2sdk1.4.2_13_64/jre
+		fi
+		if [ "$OS_TYPE" = "Linux" ]; then
+		        JAVAHOME=/shared/opt/jdk/pos/j2sdk1.4.2_13_64/jre
+		fi
+		
+		# Sybase home used to locate interface files and Open Client dynamic libraries
+		case ${OS_PLATFORM} in
+		sparc)
+		        SYBASE=/shared/opt/sybase/openclient_pos/12.5
+		        ;;
+		i386)
+		        SYBASE=/shared/opt/sybase/openclient_pos/12.5.x86
+		        ;;
+		esac
+		
+		export SYBASE
+		LD_LIBRARY_PATH=$SYBASE/OCS-12_5/lib:/usr/openwin/lib:/usr/ccs/lib:/shared/opt/S
+		CB/mx_api/live/lib
+		export LD_LIBRARY_PATH
+		
+		if [ -d "/usr/sfw/lib" ]
+		then
+		        if [ `echo ${LD_LIBRARY_PATH}|grep "/usr/sfw/lib"|wc -l` = 0 ]
+		        then
+		                LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/sfw/lib
+		        fi
+		fi
+		
+		case ${OS_PLATFORM} in
+		i386)
+		        LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/shared/opt/SCB/SolarisStudioX86/live
+		/lib
+		        ;;
+		esac
+		
+		export LD_LIBRARY_PATH
+		
+		# Oracle Home used to locate Oracle Client dynamic libraries
+		ORACLE_HOME=
+		#ORACLE_HOME=/local/oracle/app/oracle/product/9i
+		export ORACLE_HOME
+		NLS_LANG=AMERICAN_AMERICA.AL32UTF8
+		export NLS_LANG
+		
+		#MXG2000_HOME=/apps/murfx2000_new
+		#export MXG2000_HOME
+		
+		#MXJ_JDK_OR_JRE=jdk
+		#MXJ_JDK_OR_JRE=jre
+		
+		# Define the encrypted password for the monitor
+		MXJ_PASSWORD=001000f00010003000a000d000c0
+		
+		# Define your default Mx G2000 File Server environment
+		# Warning : Take care of the MXJ_FILESERVER_HOST in case of running on different
+		 host.
+		MXJ_FILESERVER_HOST=magapp15a
+		MXJ_FILESERVER_PORT=10251
+		
+		MXJ_FILESERVER_TIME_ADJUSTMENT=1
+		# Optional arguments passed to the FileServer.
+		# " " are mandatory if several args.
+		FILESERVER_ARGS=
+		
+		# Define your default Mx G2000 XmlServer environment
+		#Backward compatibility with Version 2.2.9
+		#Leave it blank with 2.2.10.
+		MXJ_HOST=
+		MXJ_PORT=
+		
+		# Optional arguments passed to the XmlServer such as forcing attachment to
+		# a specific IP adrress. " " are mandatory if several args.
+		
+		XML_SERVER_ARGS="-d64 -verbose:gc -Xloggc:logs/xmls.gc.log.${TODAY} -XX:+PrintGC
+		Details -XX:+PrintGCTimeStamps -Dsun.rmi.dgc.client.gcInterval=3600000 -Dsun.rmi
+		.dgc.server.gcInterval=3600000"
+		
+		# Define your default Mx G2000 Site and Hub environment
+		#Define your site name, must be defined in site.mxres.
+		#Leave it by default.
+		MXJ_SITE_NAME=mxg_bodev2
+		
+		#Define your hub name, must be defined in site.mxres.
+		#Leave it by default.
+		MXJ_HUB_NAME=hub_gdc
+		
+		# Optional arguments passed to the Hub home such as forcing attachment to
+		# a specific IP adrress. " " are mandatory if several args.
+		#HUB_HOME_ARGS="-Djava.rmi.server.hostname=X.X.X.X"
+		HUB_HOME_ARGS="-Xms512m -Xmx1024m"
+		
+		# Define your default Mx G2000 MxMlExchange environment
+		# Optional arguments passed to the MxMlExchange Server.
+		# " " are mandatory if several args.
+		# --- Added on 25 Sep 2008 to capture MXML thread process
+		## MXML_SERVER_ARGS="-Xloggc:mxml_gc_log.txt -XX:+PrintGCDetails"
+		
+		## CR: CMKL00000183191 :
+		#MXML_SERVER_ARGS="-Xloggc:mxml.gc.log.${TODAY}.$$ -XX:+PrintGCDetails"
+		MXML_SERVER_ARGS=
+		
+		# Define your default Mx G2000 Launcher environment
+		# Optional arguments passed to launcher.
+		# " " are mandatory if several args.
+		LAUNCHER_ARGS=
+		
+		# Define your default Mx G2000 Murexnet environment
+		# Warning : Must be the same as specified into the murexnet.mxres configuration
+		file
+		# by /IPHOST:namedhost:8000
+		# The Murexnet usually run on 8000 port, but you can use another one.
+		MUREXNET_PORT=21203
+		
+		#Optional arguments passed to the murexnet such as forcing attachment to
+		# a specific IP adrress or logs." " are mandatory if several args.
+		MUREXNET_ARGS="/IPALTADDR:magapp15a /IPLOG"
+		
+		#Rticachesession Display
+		RTICACHESESSION_XWIN_DISP=`echo $DISPLAY | cut -d: -f1`
+		
+		EXTRA_ARGS="/MXJ_PING_TIME:60000 /MXJ_PING_CHECK:600000 /MXJ_MX_PING_TIME:60000
+		/MXJ_MX_PING_CHECK:600000 /MXJ_LAUNCHER_PING_TIME:60000 /MXJ_LAUNCHER_PING_CHECK
+		:600000"
+		##########################
+		
+		
+%TEMP%和%MXJ_BOOT%等变量是在哪里设置的？		
+
+## Control-M 
+ControlM(ctm)在file server上的根目录：/shared/opt/SCB/pos_eod/live, cd 到用户根目录下后，ctm命令可进入该目录。								
+修改JOB Draft，即JOB的定义文件，然后将其导入到ControlM中。	主要修改以下6处							
+	1.   APPLICATION="1512113"  ， 改成自己的bankID							
+	2.   JOBNAME="DMART_RUBICON_TRADE" ,  指向CF文件的名称 ，但JOBNAME的值要大写，							
+	3.    NODEID="magapp15a"  ,  指向UNIX Server的name，　为controlM系统提供链接哪个Unix服务器							
+	4.    DATACENTER="MUREXUAT" ,  指定我们的ControlM JOBS 运行在哪个server上。这个server仅在controlＭ的group级别指定的，通常我们指定它为MUREXUAT							
+	5.    CMDLINE="%%BASEPATH/scripts/eod_task.pl -jobcode=%%JOBNAME   -config=env802(com_daily/vareod,magapp15a:/shared/opt/SCB/pos_eod/POS_EOD_GL_4.1.0/config$ ls eod_main.*.cf)  -psserver X86(delete it?)"  ,  CMDLINE中指定JOB的运行程序脚本，该脚本将读取cf文件，job脚本可以运行在不同的Murex环境中，不同的Murex环境的环境变量是不同的，-config参数指定为环境变量文件的别名（别名为文件名的一部分）。不同的环境的环境变量文件定义在fileServer: /shared/opt/SCB/pos_eod/live/config/下。							
+	6.    RUN_AS="posop" , 指定以哪个UNIX用户身份，即权限去执行该ＪＯＢ的CMDLINE.							
+	7.     <JOB JOBNAME="PRO_TRADE_COM" …>  ，每个JOB都有一个JOBNAME标签，其值与该JOB的cf文件中定义的JOBNAME要一致，与cf文件名也一致，但cf文件名需要小写，而JOBNAME的值要大写。							
+		cd命令进入用户根目录下后，输入jobdefs就可进入/shared/opt/SCB/pos_eod/live/config/jobdefs，ControlM  JOB的cf定义文件就在这个目录下，						
+	8.    <RULE_BASED_CALENDARS NAME="BATCH_DAYS" /> 标签指明该JOB根据哪个Calenda Rule去执行。							
+	9.   <JOB CONFCAL="BATCH_DAYS", ….>							
+								
+分组，　Entity folder								
+								
+								
+								
+								
+								
+Login ControlM system -> Planning -> create a new workspace -> import JOB draft file								
+Unload all irrelevant job in the workspace -> click Check In -> click Order       Check In 和 Order的区别？？？？？？？？？？？？？？？？？？？？？								
+Monitoring -> Recent ViewPoints -> All Jobs -> Application->Hirarchy/Application中输入查询的值（预定义的值是bankID)then open-> 								
+	free all your jobs including the jobs' folder							
+	Tools->QUANTITATIVE Resource -> delete the current resource and then add your own new resource ,source name equals with the  <QUANTITATIVE NAME="TONYPC$"…> defined in Job draft. Cpu choos 40 in day, 							
+	find the most high level job -> right click waiting info-> Apply All -> right click on the job to  run now							
+								
+								
+								
+								
+只有check　job 红了可以set OK,也可以根据check job的log去fix the check job								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+control M cf file can configure in the following files.								
+								
+magapp15a:/shared/opt/SCB/pos_eod/live/config$ ls *dmart*dev1*								
+								
+								
+								
+								
+对于pre-product env  （如frd, var等）的control M script file is under magapp15a:/shared/opt/SCB/pos_eod/live/config/jobdefs_preprod  not magapp15a:/shared/opt/SCB/pos_eod/live/config/jobdefs								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+ENV variable 								
+$POS_MUREX_BASE  =>  /shared/opt/SCB/pos_murex/live								
+								
+								
+								
+								
+cf file => DB configure file								
+magapp15a:/shared/opt/SCB/poscommon/live/config$ more pos_db.cf								
+								
+magapp15a:/shared/home/posop$ $POSCOMMON_BASE/bin/posisql PROFILE_MXG_IRDFX_DEV9								
+Msg 911, Level 11, State 2:								
+Server 'mx9a_sql', Line 1:								
+Attempt to locate entry in sysdatabases for database 'MXG_IRDFX_DEV9' by name								
+failed - no entry found under that name. Make sure that name is entered								
+properly.								
+1>								
+q								
+Solution:								
+1. cd /shared/opt/SCB/dbgen/live/bin								
+2. rm jerry.sed								
+3. vi jerry.dbo								
+4. DBUpdateCF jerry.dbo jerry.cf à jerry.sed								
+5. need copy 1								
+								
+								
+								
+7. cd /shared/opt/SCB/poscommon/live/config								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+                1.  open your control M draft								
+                2.  remove the key word FOLDER_ORDER_METHOD="SYSTEM"								
+                3.  if need open a session to align our understanding, please let me know.								
+								
+								
+								
+								
+$POS_VARUTILS_BASE								
+/shared/opt/SCB/pos_varutils/live								
+								
+								
+								
+								
+								
+								
+POST WEB 								
+https://posweb.gdc.standardchartered.com:8002 								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+Tomcat								
+/shared/opt/tomcat/spirit-tomcat/webapps/spirit								
+								
+Sybase								
+/shared/opt/sybase/openclient_pos/12.0.0.3								
+								
+/opt/bin								
+/shared/home/posop/scripts								
+magapp15a:/opt$  cd $POSTOOLS								
+								
+								
+								
+								
+								
+								
+								
+Set a resource name(i.e. TONYZHU$) then distribute max resource to it(i.e. 80),then modify you control M draft  (QUANTITATIVE NAME="TONYZHU$")								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+Calendar: 								
+Open Control-m  then navigate Planning ->  Tolls -> Calendars -> create new/ find out existing 'CalendarName'								
+								
+								
+								
+								
+								
+	Sno	DB Name	Profile Name	Login	Sybase server	Port	Physical Host	Virtual Host
+	1	MXG	PROFILE_MXG	MUREXDB	mxg_sql	7000	mxgdb.gdc	db046a
+	2	MXML	PROFILE_MXML	MUREXDB	mxg_sql	7000	mxgdb.gdc	db046a
+	3	MXG_VAR	PROFILE_VAR	MUREXDB	pos_var_sql	8100	mxgvardb.gdc	db046b
+	4	MXG_RPT	PROFILE_RPT	MUREXDB	mxg_rpt_sql	7300	mxgrptdb.gdc	db050a
+	5	MXG_FDR	PROFILE_FDR	MUREXDB	mxg_fdr_sql	7200	mxgfdrdb.gdc	db050b
+	6	INTDB	PROFILE_INTDB	posop	pos_sql	6100	posdb.gdc	db011b
+	7	MXGDM	PROFILE_MXGDM	DMDBO	mxg_rpt_sql	7300	mxgrptdb.gdc	db050a
+	8	MXGDM_RPT	PROFILE_MXGDM_RPT	DMDBO	mxg_rpt_sql	7200	mxgrptdb.gdc	db050a
+	9	MXGDM_FDR	PROFILE_MXGDM_FDR	DMDBO	mxg_fdr_sql	7200	mxgfdrdb.gdc	db050b
+								
+								
+								
+								
+								
+magapp15a:/shared/opt/pos/mxg/mxg8_1/scb/reports/dates$ ls -rlt  date_td.txt								
+-rwxr--r--   1 murex    murex         40 Jan 10  2016 date_td.txt								
+								
+								
+								
+								
+								
+								
+								
+								
+Where to get the latest ControlM draft?								
+/dev_vob/packages/poseidon/eod_auto/controlm/mxg2k_production.xml								
+[1477277@dl1101 controlm]$ ls -rlt mxg2k_production.xml								
+-r--r----- 1 1377478 gmdev 6856910 Oct 13 10:03 mxg2k_production.xml								
+[1477277@dl1101 controlm]$ cp mxg2k_production.xml mxg2k_production.xml.17Oct								
+[1477277@dl1101 controlm]$ ls -rlt mxg2k_production.xml.17Oct								
+-r--r----- 1 1477277 1477277 6856910 Oct 17 07:56 mxg2k_production.xml.17Oct								
+[1477277@dl1101 controlm]$ chmod 777 mxg2k_production.xml.17Oct								
+[1477277@dl1101 controlm]$ ls -rlt mxg2k_production.xml.17Oct								
+-rwxrwxrwx 1 1477277 1477277 6856910 Oct 17 07:56 mxg2k_production.xml.17Oct								
+[1477277@dl1101 controlm]$ scp mxg2k_production.xml.17Oct posop@magapp15a.uk:/shared/home/posop/tonyzhu/mxg2k_production.xml.17Oct								
+## Murex other
+想知道JOB是否还在运行		
+	执行SQL	
+		sp_MxLock
+	config login Murex -> publisher->Datamart->Job	
+		
+		
+		
+		
+Joy's murex objects export from murex		
+/shared/home/murex/su_roy_yu/project/rubicon/cm0000000679433/gl2.2.2/objects		
+ 
+## 重启launcher
+	MXG_FDR :-					
+	Login: magapp15a: as murex					
+	cd /shared/mrxdev_pos/mxg_fdr/live					
+	/shared/mrxdev_pos/mxg_pp_services_main.sh fdr stop					
+	/shared/mrxdev_pos/mxg_pp_services_main.sh fdr start					
+
+
+## /shared/mrxdev_pos/mxg_pp_services_main.sh
+#!/bin/ksh
+
+CURR_DIR=`pwd`
+ENV=${1}
+STATUS=${2}
+MXML=${3:-"N"}
+LAUNCHERS=${4:-"Y"}
+
+case ${ENV} in 
+mxg|var|fdr|rpt|purge)
+	echo "valid environment provided ... continuing"
+	;;
+*)
+	basename `dirname ${CURR_DIR} | sed -e "s;/live;;g"` | nawk -F "_" '{ print $NF }' | read -r ENV
+	;;
+esac
+
+BINARY_PATH=${BINARY_PATH:-"/shared/mrxdev_pos"}
+
+echo "-------------------------------------- [ ${ENV} ]"
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+# function main_start()
+# - - - - - - - - - - - - 
+main_start() {
+	./launchmxj.app -fs
+	sleep 4
+	case ${ENV} in
+	mxg|purge)
+		./launchmxj.app -xmlsnohub
+		sleep 4
+		./launchmxj.app -hub /MXJ_HUB_NAME:hub_gdc
+		;;
+	var|fdr|rpt)
+		./launchmxj.app -xmls
+		sleep 4
+		;;
+	esac
+
+	./launchmxj.app -l
+	./launchmxj.app -mxnet
+
+	./launchmxj.app -s
+}
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+# function main_stop() {
+# - - - - - - - - - - - - 
+main_stop() {
+	./launchmxj.app -mxnet -k
+	./launchmxj.app -l -k
+	case ${ENV} in 
+	mxg)	
+		./launchmxj.app -hub /MXJ_HUB_NAME:hub_gdc -k
+		./launchmxj.app -xmlsnohub -k
+		;;
+	var|fdr|rpt)
+		./launchmxj.app -xmls -k
+		;;
+	esac
+
+	./launchmxj.app -fs -k
+	./launchmxj.app -killall
+	for all_hosts in `(echo magapp14a magapp15a; cat /shared/opt/SCB/dev_launchers/config/X86_ALL_HOSTS_PP.cf)`
+	do
+		ssh -q murex@${all_hosts} "cd ${CURR_DIR};./launchmxj.app -killall"
+	done
+
+	./launchmxj.app -s
+}
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+case ${STATUS} in
+start)
+	## Start main mandatory services
+	main_start
+	case ${ENV} in
+	mxg)
+		## Start MXML services for mxg env
+		${BINARY_PATH}/mxg_pp_services_mxml.sh mxg start
+		;;
+	var|fdr|rpt|purge)
+		echo "MXML services are not required for VAR/FDR/RPT environment .. continuing"
+		;;
+	esac
+	if [ ${LAUNCHERS} == "Y" ]
+	then
+		## Start Launcher services for GUI and Batch
+		${BINARY_PATH}/main_launchers.sh ${ENV} start
+
+		case ${ENV} in
+		fdr|rpt)
+			## Start DealScanner Launcher services for FDR / RPT
+			${BINARY_PATH}/dscan_launchers.sh ${ENV} start
+			;;
+		esac
+	fi
+;;
+stop)
+	case ${ENV} in
+	fdr|rpt)
+		## Stop DealScanner Launcher services for FDR / RPT
+		${BINARY_PATH}/dscan_launchers.sh ${ENV} stop
+		;;
+	esac
+	## Stop Launcher services for GUI and Batch
+	${BINARY_PATH}/main_launchers.sh ${ENV} stop
+
+	case ${ENV} in
+	mxg)
+		## Stop MXML services for mxg env
+		${BINARY_PATH}/mxg_pp_services_mxml.sh mxg stop
+		;;
+	var|fdr|rpt|purge)
+		echo "MXML services are not running for VAR/FDR/RPT environment .. continuing"
+		;;
+	esac
+
+	## Stop main mandatory services
+	main_stop
+
+;;
+test)
+	./launchmxj.app -s
+	;;
+esac
+
+
+## mxg_pp_services_mxml.sh
+#!/bin/ksh
+
+ENV=${1}
+STATUS=${2}
+CURR_DIR=`pwd`
+BINARY_PATH=${BINARY_PATH:-"/shared/mrxdev_pos"}
+
+case ${ENV} in
+mxg|var|fdr|rpt|purge)
+	echo "valid environment provided .. continuing.."
+	;;
+*)
+	basename `dirname ${CURR_DIR} | sed -e "s;/live;;g"` | cut -d "_" -f2 | read -r ENV
+	;;
+esac
+
+case ${STATUS} in
+start)
+	./launchmxj.app -fs
+	sleep 4
+	case ${ENV} in
+	mxg)
+		./launchmxj.app -mxml
+		sleep 4
+		
+		./start_repository.sh
+		sleep 4
+		
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxmlexchangecmdex.mxres
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxmlexchangecri.mxres
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxmlexchangedocdeal.mxres
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxmlexchangefixings.mxres
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxmlexchangepayment.mxres
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxmlexchangepci.mxres
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxmlexchangestructconf.mxres
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxmlexchangestructconf1.mxres
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxmlexchangestructconf2.mxres
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxmlexchangetds.mxres
+		
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxfinparser.mxres
+		
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxdailyrepository.mxres
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxfiniqrepository.mxres
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxmarketdatarepository.mxres
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxssirepository.mxres
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxhurricanerepository.mxres
+		
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxcache.mxres
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxcontribution.mxres
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxeventcapture.mxres
+		sleep 4
+
+		./mxg_start_soap_relay.sh
+		sleep 4
+		;;
+	var|fdr|rpt)
+		echo "MXML services are not required for VAR/FDR/RPT environment .. exiting"
+		exit
+		;;
+	esac
+	;;
+stop)
+	case ${ENV} in 
+	mxg)	
+		./mxg_stop_soap_relay.sh
+
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxdailyrepository.mxres -k
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxfiniqrepository.mxres -k
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxmarketdatarepository.mxres -k
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxssirepository.mxres -k
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxhurricanerepository.mxres -k
+		
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxcache.mxres -k
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxcontribution.mxres -k
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxeventcapture.mxres -k
+		
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxmlexchangecmdex.mxres -k
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxmlexchangecri.mxres -k
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxmlexchangedocdeal.mxres -k
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxmlexchangefixings.mxres -k
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxmlexchangepayment.mxres -k
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxmlexchangepci.mxres -k
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxmlexchangestructconf.mxres -k
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxmlexchangestructconf1.mxres -k
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxmlexchangestructconf2.mxres -k
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxmlexchangetds.mxres -k
+		
+		./launchmxj.app -l /MXJ_CONFIG_FILE:launchermxfinparser.mxres -k
+		
+		./stop_repository.sh
+
+		./launchmxj.app -mxml -k
+		./launchmxj.app -killall
+		;;
+	var|fdr|rpt)
+		echo "MXML services are not required for VAR/FDR/RPT environment .. exiting"
+		exit
+		;;
+	esac
+;;
+test)
+	./launchmxj.app -s
+	;;
+esac
+
+## main_launchers.sh
+#!/bin/ksh
+set -x
+
+ENV=${1}
+STATUS=${2}
+
+CURR_DIR=`pwd`
+
+BINARY_PATH=${BINARY_PATH:-"/shared/mrxdev_pos"}
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+
+case ${ENV} in
+mxg|var|fdr|rpt|purge)
+	echo "valid environment provided .. continuing"
+	;;
+*)
+	basename `dirname ${CURR_DIR} | sed -e "s;/live;;g"` | cut -d "_" -f2 | read -r ENV
+	;;
+esac
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+
+SPC_FILE="launcher_${ENV}_app0"
+X86_FILE="launcher_${ENV}_ukspapmrx"
+
+case ${STATUS} in 
+start)
+		case ${ENV} in
+		mxg)
+			for sname in `echo 56 69 76`
+			do
+				ssh -q murex@magapp14a "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${SPC_FILE}${sname}a.mxres" &
+				ssh -q murex@magapp15a "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${SPC_FILE}${sname}b.mxres" &
+			done
+			;;
+		esac
+		for sname in `echo 59 66 67 68`
+		do
+			ssh -q murex@magapp14a "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${SPC_FILE}${sname}a.mxres" &
+			ssh -q murex@magapp15a "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${SPC_FILE}${sname}b.mxres" &
+		done
+		
+		for x86 in `echo 01 02 03 04 05 06 08 09 10 11`
+		do
+			ssh -q murex@ukspadmrx${x86}a "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${X86_FILE}${x86}a.mxres" &
+			ssh -q murex@ukspadmrx${x86}a "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${X86_FILE}${x86}b.mxres" &
+		done
+		
+		ssh -q murex@ukspadmrx08a "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${X86_FILE}07a.mxres" &
+		ssh -q murex@ukspadmrx08a "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${X86_FILE}13a.mxres" &
+		
+		ssh -q murex@ukspadmrx09a "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${X86_FILE}07b.mxres" &
+		ssh -q murex@ukspadmrx09a "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${X86_FILE}13b.mxres" &
+		
+		ssh -q murex@ukspadmrx10a "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${X86_FILE}12a.mxres" &
+		ssh -q murex@ukspadmrx10a "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${X86_FILE}14a.mxres" & 
+		
+		ssh -q murex@ukspadmrx11a "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${X86_FILE}12b.mxres" &
+		ssh -q murex@ukspadmrx11a "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${X86_FILE}14b.mxres" &
+
+		for x86new in `echo 15 16 17 18`
+		do
+			A_FILE="${X86_FILE}${x86new}a.mxres"
+			B_FILE="${X86_FILE}${x86new}b.mxres"
+			d_x86new=$((x86new-3))
+			d_host="ukspadmrx${d_x86new}a"
+			ssh -q murex@${d_host} "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${A_FILE}" &
+			ssh -q murex@${d_host} "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${B_FILE}" &
+		done
+		for x86new in `echo 19a 19b 20a 20b`
+		do
+			case ${x86new} in
+			19a)
+				d_host=12a
+				;;
+			19b)
+				d_host=13a
+				;;
+			20a)
+				d_host=14a
+				;;
+			20b)
+				d_host=15a
+				;;
+			esac
+			P_FILE="${X86_FILE}${x86new}.mxres"
+			d_host="ukspadmrx${d_x86new}"
+			ssh -q murex@${d_host} "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${P_FILE}" &
+		done
+;;
+stop)
+		case ${ENV} in
+		mxg)
+			for sname in `echo 56 69 76`
+			do
+				ssh -q murex@magapp14a "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${SPC_FILE}${sname}a.mxres -k"
+				ssh -q murex@magapp15a "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${SPC_FILE}${sname}b.mxres -k"
+			done
+			;;
+		esac
+		for sname in `echo 59 66 67 68`
+		do
+			ssh -q murex@magapp14a "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${SPC_FILE}${sname}a.mxres -k"
+			ssh -q murex@magapp15a "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${SPC_FILE}${sname}b.mxres -k"
+		done
+		for x86 in `echo 01 02 03 04 05 06 08 09 10 11`
+		do
+			ssh -q murex@ukspadmrx${x86}a "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${X86_FILE}${x86}a.mxres -k"
+			ssh -q murex@ukspadmrx${x86}a "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${X86_FILE}${x86}b.mxres -k"
+		done
+		
+		ssh -q murex@ukspadmrx08a "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${X86_FILE}07a.mxres -k"
+		ssh -q murex@ukspadmrx08a "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${X86_FILE}13a.mxres -k"
+		
+		ssh -q murex@ukspadmrx09a "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${X86_FILE}07b.mxres -k"
+		ssh -q murex@ukspadmrx09a "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${X86_FILE}13b.mxres -k"
+		
+		ssh -q murex@ukspadmrx10a "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${X86_FILE}12a.mxres -k"
+		ssh -q murex@ukspadmrx10a "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${X86_FILE}14a.mxres -k"
+		
+		ssh -q murex@ukspadmrx11a "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${X86_FILE}12b.mxres -k"
+		ssh -q murex@ukspadmrx11a "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${X86_FILE}14b.mxres -k"
+
+		for x86new in `echo 15 16 17 18`
+		do
+			A_FILE="${X86_FILE}${x86new}a.mxres"
+			B_FILE="${X86_FILE}${x86new}b.mxres"
+			d_x86new=$((x86new-3))
+			d_host="ukspadmrx${d_x86new}a"
+			ssh -q murex@${d_host} "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${A_FILE} -k"
+			ssh -q murex@${d_host} "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${B_FILE} -k"
+		done
+		for x86new in `echo 19a 19b 20a 20b`
+		do
+			case ${x86new} in
+			19a)
+				d_host=12a
+				;;
+			19b)
+				d_host=13a
+				;;
+			20a)
+				d_host=14a
+				;;
+			20b)
+				d_host=15a
+				;;
+			esac
+			P_FILE="${X86_FILE}${x86new}.mxres"
+			d_host="ukspadmrx${d_x86new}"
+			ssh -q murex@${d_host} "cd ${CURR_DIR};./launchmxj.app -l /MXJ_CONFIG_FILE:${P_FILE} -k"
+		done
+;;
+esac
