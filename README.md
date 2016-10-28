@@ -1,3 +1,1874 @@
+## control-m 的 批处理程序
+magapp15a:/shared/opt/SCB/pos_eod/live/scripts$ less eod_task.pl
+# Copyright 2006 Standard Chartered Bank
+eval 'exec perl -S $0 "$@"' if $running_under_some_shell;
+
+#############################################################################
+# SUMMARY
+# Job Management script for Control-M/MxG2K EOD processing
+#############################################################################
+
+
+#############################################################################
+# Standard Perl Libraries
+#############################################################################
+
+use English;
+use Carp;
+use POSIX;
+
+use FileHandle;
+use File::Basename;
+use File::Copy;
+use File::Path;
+use Getopt::Long;
+use IO::Handle;
+use Sys::Hostname;
+use Cwd;
+
+#############################################################################
+# LOCAL INITIALISATION
+#############################################################################
+# Special Perl rountine is executed the moment it is completely defined
+# this allows variables to be used to access Perl libraries
+BEGIN
+{
+   my $dirname = dirname ($PROGRAM_NAME);
+   my $OWD = cwd();
+   chdir $dirname . "/..";
+   my $BASE_DIR = cwd();
+   chdir $OWD;
+   $ENV{'POS_EOD_BASE'} = $BASE_DIR;
+}
+
+#############################################################################
+# Non-standard Perl Libraries
+#############################################################################
+
+use lib "$ENV{'POS_EOD_BASE'}/scbperl/lib";
+use lib "$ENV{'POS_EOD_BASE'}/cpan/lib";
+use lib "$ENV{'POS_EOD_BASE'}/scripts";
+
+use SCB::Profile;
+use SCB::Timer;
+
+use pos_eod_utils;
+use pos_eod_checks;
+
+# ------------------------------------------------------------------------------
+# Force perl into strict mode
+use strict;
+use strict 'vars';
+
+# ------------------------------------------------------------------------------
+# Check the perl version
+die "Must have Perl 5.00503 or greater" if $PERL_VERSION < 5.00503;
+
+# ------------------------------------------------------------------------------
+# Setup signal handlers
+setSignals();
+
+# ------------------------------------------------------------------------------
+# Autoflush stdout (for debug)
+STDOUT->autoflush (1);
+
+# ------------------------------------------------------------------------------
+# Default values for SNMP traps (used if trap raised before config is loaded)
+my $_def_trapid  = "6 48";	
+my $_def_envfile = "/var/opt/OV/share/conf/mgdparm_%hostname%";
+my $_def_bindir  = "/opt/OV/bin";
+my $_def_snmpexe = "snmptrap";
+my $_def_sendtrap = ". /opt/bin/snmpfunctions; sendtrap";
+
+# ------------------------------------------------------------------------------
+# Global set-up
+
+# predeclare global variables
+use vars qw(%_optctl 
+	    $_true $_false $_success $_failure
+	    $_profile $_logfh $_tab $_locklog
+	    $_prevdate $_currdate $_timer $_sdate $_stime
+	    $_verbose $_debug $_ps_srvcount
+	    $_ps_user $_usrfname $_usrassign
+	    $_ps_server $_svrfname $_svrassign
+	    $_proc_checks $_hostname $_send_traps
+	    $_fail_list $_lastdate $hourtime $weekday $jobcode $max_lvl
+	    %min_thresholds %max_thresholds @max_thresholds $prev_alarm_time $receivedAlarm %sevLabel);
+
+# set-up true and false
+$_false   = 0; $_true    = (!$_false);
+$_success = 0; $_failure = 1;
+
+# set-up command line options
+%_optctl = ();
+GetOptions (\%_optctl, "help!", "verbose!", "nodebug!", "notrap!", "nocheck!", 
+		       "jobcode=s", "config=s", "prevdate=s", "currdate=s", 
+		       "psuser=s", "psserver=s", "lastdate=s",
+		       "pssrvcount=s");
+# show usage if help requested or job code missing
+usage() if	$_optctl{'help'};
+usage() unless	$_optctl{'jobcode'};
+
+# snmp on/off switch (-nosnmp option overrides config file value)
+$_send_traps  = ( $_optctl{'notrap'}  ) ? $_false : $_true;
+$_proc_checks = ( $_optctl{'nocheck'} ) ? $_false : $_true;
+
+# set verbose and debug flags
+$_debug   = ( $_optctl{'nodebug'} ) ? $_false : $_true; 
+$_verbose = $_optctl{'verbose'}; 
+
+# name of host running this script
+$_hostname = hostname();
+
+# load the timer object
+$_timer = new SCB::Timer ( $_optctl{'jobcode'}, $_verbose );
+$_stime = $_timer->stime ( "%H%M_%S" );
+$_sdate = $_timer->stime ( "%a %e %h %Y" );
+
+# locate and load the config profile
+my $_cfcat   = ( $_optctl{'config'} ) ? ".$_optctl{'config'}" : "";
+my $_cfname  = "$ENV{'POS_EOD_BASE'}/config/eod_main$_cfcat.cf";
+$_profile = new SCB::Profile ($_cfname);
+
+# turn off snmp traps if config says so 
+# unless already turned off by cmd opt
+$_send_traps = getcfg ( "ERROR_HANDLING/SEND_TRAPS" ) if $_send_traps;
+
+# file name for logging file locks
+$_locklog = "/tmp/pos_eod_flock.log";
+
+# tab indent for log reporting lines
+$_tab = 0;
+
+# dates set to dates in date_td.txt unless specified as cmd option
+$_prevdate =( $_optctl{'prevdate'} ) ? "$_optctl{'prevdate'}" : busdate("_");
+$_currdate =( $_optctl{'currdate'} ) ? "$_optctl{'currdate'}" : 
+							busdate("_", "current");
+# This date is got from date_la.txt
+$_lastdate =( $_optctl{'lastdate'} ) ? "$_optctl{'lastdate'}" : 
+							busdate("_", "last");
+
+# NB: previous trading date is taken as the business date, since the front 
+# office date will have rolled and we are processing for the day just gone
+
+# murex user for runnning processing script
+# allocated at runtime by assignUser function, unless specified as cmd option
+$_usrassign = $_optctl{'psuser'};
+$_ps_user = "";
+
+# murex server on which processing script should be run
+# allocated at runtime by assignServer function, unless specified as cmd option
+$_svrassign = $_optctl{'psserver'};
+$_ps_server = "";
+
+# count of sessions to be allocated from the server file (defaults to 1)
+if (defined $_optctl{'pssrvcount'}) { 
+   $_ps_srvcount = $_optctl{'pssrvcount'};
+   report "Server sessions to allocate is $_ps_srvcount";
+} else {
+    $_ps_srvcount = 1;
+}
+#$_ps_srvcount = ( $_optctl{'pssrvcount'} ) ? "$_optctl{'pssrvcount'}" : 1;
+
+# filename holding user and server allocation tables respectively
+$_usrfname;
+$_svrfname;
+
+# Holds the list of failures of checks to be reported at the end of
+# the sysout at the end of main().
+$_fail_list = "";
+
+
+$max_lvl = 256;
+# ------------------------------------------------------------------------------
+# Call the main routine
+exit main();
+
+# ------------------------------------------------------------------------------
+# Display the usage panel
+sub usage() {
+    print "$PROGRAM_NAME\n",
+    
+    "\t-jobcode=<jobcode>        - job code to run\n",
+    "\t[-config=<category>]      - non-default config category (e.g. dev)\n",
+    "\t[-prevdate=<date>]        - previous trading date in YYYY_MM_DD format\n",
+    "\t[-currdate=<date>]        - current trading date in YYYY_MM_DD format\n",
+    "\t[-lastdate=<date>]        - last trading date in YYYY_MM_DD format\n",
+    "\t[-psuser=<mxguser>]       - mxg user for processing script (override)\n",
+    "\t[-psserver=<server alias>]- server alias for proc script (override)\n",
+    "\t[-pssrvcount=<number>]    - # of server sessions to allocate (def 1)\n",
+    "\t[-notrap]                 - suppress snmp traps\n",
+    "\t[-nocheck]                - suppress post-processing checks\n",
+    "\t[-verbose]                - show extra debug information\n",
+    "\t[-nodebug]                - prevent logs going to standard out\n",
+    "\t[-help]                   - show this help file\n";
+    
+    exit 0;
+}
+
+#############################################################################
+sub setAlarm($$$) {
+   my($signal, $period, $alarmpid) = @_;
+   my($pid);
+
+   if ($pid = fork()) {
+      verbose "setAlarm $signal, $period, $alarmpid";
+      return;
+   } elsif (defined $pid) {
+      # child pid
+      sleep $period;
+      kill $signal, $alarmpid;
+      #verbose "$$ send $signal to $alarmpid";
+      exit 0;
+   } else {
+      die "Failed to fork: $!\n";
+   }
+}
+
+#############################################################################
+sub setNewAlarm() {
+   if ($#max_thresholds >= 0) {
+      my($time) = pop @max_thresholds;
+      my($alarm_time) = $time - $prev_alarm_time;
+      $prev_alarm_time = $time;
+      setAlarm("USR1", $alarm_time, $$);
+   }
+}
+
+#############################################################################
+sub alarmHandler {
+   my($signame) = @_;
+
+   $_verbose = $_false;
+   $receivedAlarm = $prev_alarm_time;
+   verbose "****Received signal SIG$signame $max_thresholds{$receivedAlarm}";
+   setNewAlarm();
+
+
+    # test if over-run failures
+       my($dlvl) = $max_thresholds{$receivedAlarm};
+       my($dthreshold) = sprintf("%d", $receivedAlarm);
+       if ($max_lvl > $dlvl) { $max_lvl = $dlvl; }
+       my($trap_id, $stop, $email) = getErrConfig ( $dlvl );
+       $_fail_list .= "Job completion exceeded time threshold ($dthreshold secs)\n";
+       report "Job completion exceeded time threshold ($dthreshold secs)";
+       report "    Level=$dlvl trap=$trap_id stop=$stop email=$email";
+       #$error_count_crt++ if ($stop eq "YES");
+       #$error_count++;
+       ($trap_id, $stop, $email) = getErrConfig ( $max_lvl );
+
+
+        my($snmptxt)  =
+        "\"job $jobcode (started on $_sdate @ $_stime) failed a level" .
+        " $max_lvl check. Job completion exceeded time threshold ($dthreshold secs).\"";
+           
+        if ( $email eq "YES" ) { send_email($snmptxt); }
+
+        if ( $_send_traps and ( $trap_id ne "NONE" ) ) {
+           report "raising SNMP trap";
+           snmpTrap ( $trap_id, $snmptxt ) if $_send_traps;
+           report "raised SNMP trap (ok)";
+        }
+
+        #if ($stop eq "YES") { 
+        #   report "ABORT Execution";
+        #   exit 1; 
+        #}
+
+}
+
+# ------------------------------------------------------------------------------
+# Set-up signal handler
+sub setSignals() {
+    $SIG{INT}     = \&sigTerm;
+    $SIG{TERM}    = \&sigTerm;
+    $SIG{__DIE__} = \&exitDie;
+
+}
+
+# ------------------------------------------------------------------------------
+# Signal handler
+sub sigTerm($) {
+    my $sig = shift; chomp $sig;
+
+    my $date = timestamp ("%a %e %h %Y");
+    my $time = timestamp ("%T");
+
+    $_tab = 0;
+    
+    report (50);
+    report "received signal ($sig), will attempt de-allocation if required";
+
+    # deallocate sessions from processig script users and servers
+    deallocAll();
+
+    report (50); 
+    report "exiting after receiving signal ($sig) on $date @ $time";
+
+    exit 1;
+}
+
+# ------------------------------------------------------------------------------
+# Exit (die) handler
+sub exitDie($) {
+    my $err = join ('', @_); chomp $err;
+
+    my $date = timestamp ("%a %e %h %Y");
+    my $tim  = timestamp ("%T");
+
+    $_tab = 0;
+    report "FATAL ERROR: $err";
+    report (50); report "terminated with error on $date @ $tim";
+    
+    # de-allocate sessions from processig script users and servers
+    deallocAll();
+
+    if ( $_send_traps ) {
+
+	report "raising SNMP trap";
+	
+	my $jobcode = $_optctl{'jobcode'};
+	my $trap_id = "";
+	my $snmptxt =
+	
+	"\"job $jobcode (started on $_sdate @ $_stime) " .
+	"had a FATAL error, logfile may be available as [ " .
+	"eod_job.$_stime.$jobcode.log ] err [ $err ]\"";
+	
+	#snmpTrap ( $trap_id, $snmptxt );
+	
+	#report "raised SNMP trap (ok)";
+    }
+
+    carp ($err);
+}
+
+# ------------------------------------------------------------------------------
+# Attempt de-allocation of assigned servers and users on unexpected exit
+sub deallocAll {
+
+    if ( $_ps_user ne "" ) {
+
+	# de-allocate user
+	report "WARNING: user $_ps_user not deallocated" 
+	    unless userAssign ( $_usrfname, $_ps_user );
+    }
+
+    if ( $_ps_server ne "" ) {
+    
+	# de-allocate server
+	report "WARNING: server $_ps_server not deallocated" 
+	    unless serverAssign ( $_svrfname, $_ps_srvcount, $_ps_server );
+    } 
+}
+
+# ------------------------------------------------------------------------------
+# Write contents of config file to standard out
+sub reportConfig(;$){
+    my $basepath = shift;
+    $basepath = "/" unless defined $basepath;
+    
+    report "profile contents for $_cfname (from path $basepath) :";
+    
+    my $key;
+    foreach $key ( sort keys %{$_profile->{'config'}} ) {
+
+	next unless $key =~ /^$basepath(.*)$/;
+	report "\t$key == " . clean ( $_profile->get_value ( $key ) );
+    }
+    report "end of profile contents for $_cfname (from path $basepath)";
+}
+
+#############################################################################
+# set min and max time thresholds (if any) from configuration
+sub setTimeThresholds($) {
+   my($jobcode_lc) = @_;
+
+   %min_thresholds = ();
+   %max_thresholds = ();
+   @max_thresholds = ();
+   undef $receivedAlarm;
+
+   my($value) = getcfg( "THRESHOLDS/JOBS/$jobcode_lc" );
+   if ($value eq "") { return; }
+
+   $value =~ s/\\//g;
+   while ($value =~ m/([<>])\s*([\d:]+\s*,\w+)\s*(.*)/) {
+      my($threshType) = $1;
+      my($threshold) = $2;
+      my($time, $sev);
+      $value = $3;
+      $threshold =~ s/\s//g; #remove all spaces
+      if (($time, $sev) = $threshold =~ m/([\d:]+),(\w+)/) {
+         if ($sev !~ m/^\d+$/) {
+            if ( defined $sevLabel{$sev} ) {
+               $sev = $sevLabel{$sev};
+            } else {
+               die "Failed to recognise Severity label ($sev)";
+            }
+         }
+         if ($time =~ m/(\d*):(\d*)$/) {
+            my($hrs) = 0;
+            my($mins) = 0;
+            my($secs) = 0;
+            $secs = $2 if ( defined $2 );
+            $mins = $1 * 60 if ( defined $1 );
+            if ($time =~ m/(\d+):\d*:\d*$/) {
+               $hrs = $1 * 3600;
+            }
+            $time = $hrs + $mins + $secs;
+         }
+         if ($time > 0) {
+            $time = sprintf("%08d", $time);
+            if ($threshType =~ /</ ) {
+               $min_thresholds{$time} = $sev;
+            } else {
+               $max_thresholds{$time} = $sev;
+            }
+         }
+      }
+   }
+
+   my($time);
+   foreach $time (reverse sort keys %min_thresholds) {
+      verbose "min threshold at $time is $min_thresholds{$time}";
+   }
+   foreach $time (reverse sort keys %max_thresholds) {
+      verbose "max threshold at $time is $max_thresholds{$time}";
+      push @max_thresholds, $time;
+   }
+}
+
+#############################################################################
+sub setSevLabels() {
+    my $bkey    = "ERROR_HANDLING/POSTPROC_HANDLING";
+
+    %sevLabel = ();
+    # determine the severity level
+    my $severity = "DEF";
+    my $sevlist  = getKeys ( "$bkey/SEVERITY" );
+
+    foreach ( @$sevlist ) {
+        my $severitydef = getcfg ( "$bkey/SEVERITY/$_" );
+        my ($min, $max) = split /,/, $severitydef;
+        $sevLabel{$_} = $min;
+        verbose "sevLabel{$_} = $min";
+    }
+}
+
+#############################################################################
+sub earlyFinish() {
+
+   my($duration) = getduration();
+   verbose "duration = $duration secs";
+   my($time);
+   foreach $time (reverse sort keys %min_thresholds) {
+      #verbose "min threshold at $time is $min_thresholds{$time}";
+      if ($duration < $time) {
+         verbose "RAISE $min_thresholds{$time}";
+         return $time;
+      }
+   }
+   return 0;
+}
+
+#############################################################################
+# ------------------------------------------------------------------------------
+# Main body
+sub main() {
+    $jobcode = $_optctl{'jobcode'};
+    my $jobcode_lc = lc ( $jobcode );
+    my $jobsdir = getcfg ( "JOB_DEFS_DIR" );
+
+    my $logdir = getcfg ( "LOG_DIR" ) . "/$_prevdate";
+    my $logname = "$logdir/eod_job.$_stime.$jobcode.log";
+    
+    # make the log dir if it not already present, loop in case we
+    # conflict with another instance
+    my $maxdcnt = (getcfg ( "LOG_DIR_CREATE_TRIES" ) or 5);
+    my $dcnt = 0;
+    until ( -d $logdir) {
+       ( $dcnt++ <= $maxdcnt ) or die "couldn't create dir $logdir: $!";
+       mkdir ( $logdir , 0775 ) and next;
+       sleep 1;
+    }
+
+    # make sure directory has rw permission on group
+    my $count = chmod 0775, $logdir;
+    print "WARNING: could not chmod (0775) $logdir" if ($count != 1);
+    
+    die "logfile $logname already exists" if -e $logname;
+
+    # open the logfile
+    $_logfh = new IO::File ($logname, "w+") 
+	or die "unable to open logfile $logname: $!\n";
+
+    # load up job definition
+    report "Loading job definition $jobsdir/$jobcode_lc.cf";
+    $_profile->interpolate ( "$jobsdir/$jobcode_lc.cf" );
+
+    report "running job $jobcode ($_sdate @ $_stime) on $_hostname (pid=$PID)";
+    report "business processing date is $_prevdate";
+    report "SNMP traps are " . ( ( $_send_traps ) ? "ON" : "OFF" );
+    report "post-processing checks are " . ( ( $_proc_checks ) ? "ON" : "OFF" );
+    
+    # set time thresholds (if any)
+    $SIG{USR1} = $SIG{USR2} = \&alarmHandler;
+    setSevLabels();
+    setTimeThresholds($jobcode_lc);
+    $prev_alarm_time = 0;
+    setNewAlarm();
+
+    reportConfig() if $_verbose;
+    
+    report "running job commands...";
+
+    $_tab++;
+    
+    my $retcode = runJob ( $jobcode ); 
+
+    $_tab--; 
+    
+    report "end of job commands (last return code = $retcode)";
+
+    my $status = $_success;
+
+    if ( $_proc_checks ) {
+    
+	report "running post-processing checks for $jobcode"; 
+    
+	$_tab++;
+    
+	# do post-processing checks
+	$status = postProcCheck ( $jobcode, $retcode ) if $_proc_checks; 
+    
+	$_tab--;
+
+	report "end of post-processing checks for $jobcode (" .
+		( ( $status ) ? "failed)" : "ok)" );
+    }
+    else {
+
+	report "post-processing checks are off, returning $_success by default";
+    }
+
+    # List the checks that failed at the end of the sysout
+    if ( $_fail_list ) {
+	report $_fail_list;
+    }
+
+    report "end of job $jobcode (". ( ( $status ) ? "failed)" : "ok)");
+    report "job $jobcode took " . ( $_timer->duration() );
+    
+    return $status;
+}
+
+# ------------------------------------------------------------------------------
+# Run job for specified job code
+sub runJob($;$) {
+    my $jobcode = shift;
+    my $jobcode_lc = lc ( $jobcode );
+
+    my $jobsdir = getcfg ( "JOB_DEFS_DIR" );
+    
+    my $jobtype = getcfg ( "/$jobcode/JOB_TYPE" );
+    my $jobname = getcfg ( "/$jobcode/JOB_NAME" );
+
+    my $retcode;
+    my($startTime) = time();
+    if ( $jobtype eq "PROCESSING_SCRIPT" ) {
+
+	$retcode = runProcScript ( $jobname );
+    }
+    elsif ( $jobtype eq "INTERFACE_SCRIPT" ) {
+
+	$retcode = runInterfaceScript ( $jobname );
+    }
+    else { 
+    
+	die "unknown job type \"$jobtype\" for job code $jobcode";
+    }
+    
+    
+    
+    return $retcode;
+}
+
+# ------------------------------------------------------------------------------
+# Check the status of the previous executed command
+sub postProcCheck($$) {
+    my ($jobcode, $retcode) = @_;
+    my ($trap_id, $stop, $snmptxt);
+    # Get the SNMP Trap info for Sev 3 for the information alerts
+    my ($sev3_trap_id, $sev3_stop, $email) = getErrConfig ( 32 );
+    my $error_count_crt = 0;
+    my $error_count = 0;
+    my $email = "NO";
+
+    my $bkey = "/$jobcode/POST_PROC_CHECKS";
+    my $checklist = getKeys($bkey);
+    my $check;
+
+    foreach $check ( @$checklist ) {
+	my $checkdef =  getcfg ( "$bkey/$check" );
+	my ($lvl, $type, @args) = split /\|/, $checkdef, -1;
+
+	substGenPlaceholders ( @args );
+	substPsPlaceholders  ( @args );
+
+	my $errormsg = pop @args;
+	
+	# for return code check prepend arg list with the job return code
+	unshift @args, $retcode if $type eq "returnCode";
+
+	my $argstr; $argstr .= "'$_' " foreach ( @args );
+	
+	my $feedback = [];
+
+	# all check functions take ref to feedback list as first arg
+	unshift @args, $feedback;
+	
+	report "running level $lvl check: $check $type ( $argstr )";
+
+	$_tab++;
+	
+	# create a reference to a function as named by $type variable
+	# value for $type is taken from the post-proc check config line
+	my $check_func = \&$type; 
+
+	# we'll handle errors ourselves after check function returns
+	$SIG{__DIE__} = \&return;
+
+	# call the eod check function
+	my $ok = eval { &$check_func ( @args ) };
+
+	# reset signal handlers
+	setSignals();
+
+	# handle die signals from eval
+	if ( $EVAL_ERROR ) {
+	    die $@ unless ( $@ =~ /^Undefined subroutine.*$type called/ );
+	    report "\tunknown subroutine ($type), forcing fail";
+	    $errormsg = "no subroutine $type exported from package pos_eod_checks.pm";
+	    $lvl = 63; # Raise this as an information trap
+	    $ok = $_false;
+	}
+
+
+	unless ( $ok ) {
+	    # Report the error to the log
+	    report "ERR: $errormsg";
+
+	    ($trap_id, $stop, $email) = getErrConfig ( $lvl );
+	    # Keep track of the worst severity error
+	    $max_lvl = $lvl if ( $max_lvl > $lvl );
+
+	    # Count the number of errors for the final alert
+	    $error_count_crt++ if ($stop eq "YES");
+	    $error_count++;
+
+	    # Set up error message for SNMP Trap and sysout
+	    my $fbtext; $fbtext .= "$_ " foreach ( @$feedback );
+
+	    $snmptxt  = 
+	    "\"job $jobcode (started on $_sdate @ $_stime) failed level " .
+	    "$lvl check [ $check $type ( $argstr ) ] see logfile [ "      .
+	    "eod_job.$_stime.$jobcode.log ] err [ $errormsg ] feedback [" .
+	    " $fbtext]\"";
+
+	    $_fail_list .= "--- " . $error_count . " -----------------------\n";
+	    $_fail_list .= $snmptxt . "\n";
+
+	    # Raise an SNMP Trap if required
+	    if ( $_send_traps and ( $trap_id ne "NONE" ) ) {
+
+		report "raising SNMP trap";
+
+		# Raise SNMP Trap at level 3 for information
+		# Job error trap raised later will give the max severity
+		#snmpTrap ( $sev3_trap_id, $snmptxt );
+		
+		#report "raised SNMP trap (ok)";
+	    }
+	    else {
+		report "no SNMP rasied";
+	    }
+	}  
+
+	$_tab--;
+	report "end of check (" . ( ($ok) ? "ok)" : "failed)" );
+
+    }
+ 
+    # test if over-run failures
+    if (defined $receivedAlarm) {
+       my($exceedlvl) = $max_thresholds{$receivedAlarm};
+       my($dthreshold) = sprintf("%d", $receivedAlarm);
+       if ($max_lvl > $exceedlvl) { $max_lvl = $exceedlvl; }
+	   ($trap_id, $stop, $email) = getErrConfig ( $exceedlvl );
+       $_fail_list .= "Job completion exceeded time threshold ($dthreshold secs)\n";
+       report "Job completion exceeded time threshold ($dthreshold secs)";
+       report "    Level=$exceedlvl trap=$trap_id stop=$stop email=$email";
+       $error_count_crt++ if ($stop eq "YES");
+       $error_count++;
+    }
+
+    # test if completed too quickly
+    my($earlyrc) = earlyFinish();
+    if ( $earlyrc ) {
+       my($dlvl) = sprintf( "%d", $min_thresholds{$earlyrc});
+       if ($max_lvl > $dlvl) { $max_lvl = $dlvl; }
+       my($dthreshold) = sprintf("%d", $earlyrc);
+	   ($trap_id, $stop, $email) = getErrConfig ( $dlvl );
+       $_fail_list .= "Job completed prior to time threshold ($dthreshold secs)\n";
+       report "Job completed prior to time threshold ($dthreshold secs)";
+       report "    Level=$dlvl trap=$trap_id stop=$stop email=$email";
+       $error_count_crt++ if ($stop eq "YES");
+       $error_count++;
+    }
+
+
+    # Did we have an error?
+    if ( $_fail_list ) {
+
+        # Put totals at end of failure list
+        $_fail_list .= "Error Counts -----------------------------------\n";
+	    $_fail_list .= "Critical: " . $error_count_crt . "\n";
+        $_fail_list .= "All:      " . $error_count . "\n";
+
+
+
+	# Find the config of the most severe error we got
+        ($trap_id, $stop, $email) = getErrConfig ( $max_lvl );
+
+	if ( $_send_traps and ( $trap_id ne "NONE" ) ) {
+
+	    report "raising SNMP trap";
+
+	    $snmptxt  = 
+
+	    "\"job $jobcode (started on $_sdate @ $_stime) failed a level" .
+	    " $max_lvl check. There were $error_count_crt critical " .
+	    "out of $error_count total errors. Please see the sysout for " .
+	    "details.\"";
+			   
+	    snmpTrap ( $trap_id, $snmptxt ) if $_send_traps;
+		
+	    report "raised SNMP trap (ok)";
+	}
+	else {
+	    report "no SNMP rasied";
+	}
+	
+    if ( $email eq "YES" ) { send_email($snmptxt); }
+
+	# If the most severe error was critical then return a failure
+	# for the job
+	return $_failure if ( $stop eq "YES" );
+
+    }
+	
+    # no critical checks failed so return success
+    return $_success;
+}
+
+    
+# ------------------------------------------------------------------------------
+# Substitute general placeholders with real values
+sub substGenPlaceholders(@) {
+    my $jobcode = $_optctl{'jobcode'};
+    my $logdir = getcfg ( "LOG_DIR" ) . "/$_prevdate";
+    my $mxgdir = getcfg ( "MXG_DIR" );
+    my $time = timestamp ("%T");
+    
+    my $curr_cymd = substr ( $_currdate, 0, 4 ) . 
+		    substr ( $_currdate, 5, 2 ) . 
+		    substr ( $_currdate, 8, 2 );
+
+    my $curr_dmy  = substr ( $_currdate, 8, 2 ) . 
+		    substr ( $_currdate, 5, 2 ) . 
+		    substr ( $_currdate, 2, 2 );
+
+    my $prev_cymd = substr ( $_prevdate, 0, 4 ) . 
+		    substr ( $_prevdate, 5, 2 ) . 
+		    substr ( $_prevdate, 8, 2 );
+
+    my $prev_dmy  = substr ( $_prevdate, 8, 2 ) . 
+		    substr ( $_prevdate, 5, 2 ) . 
+		    substr ( $_prevdate, 2, 2 );
+
+    my $last_cymd = substr ( $_lastdate, 0, 4 ) . 
+		    substr ( $_lastdate, 5, 2 ) . 
+		    substr ( $_lastdate, 8, 2 );
+
+    my $last_dmy  = substr ( $_lastdate, 8, 2 ) . 
+		    substr ( $_lastdate, 5, 2 ) . 
+		    substr ( $_lastdate, 2, 2 );
+
+    # search and replace place holders
+    foreach ( @_ ) {
+
+	# time and date placeholders
+        s/%prevdate%/$_prevdate/g;
+        s/%currdate%/$_currdate/g;
+        s/%lastdate%/$_lastdate/g;
+	
+	s/%currdate_ccyymmdd%/$curr_cymd/g;
+	s/%prevdate_ccyymmdd%/$prev_cymd/g;
+	s/%lastdate_ccyymmdd%/$last_cymd/g;
+	s/%currdate_ddmmyy%/$curr_dmy/g;
+	s/%prevdate_ddmmyy%/$prev_dmy/g;
+	s/%lastdate_ddmmyy%/$last_dmy/g;
+	 
+	s/%time%/$time/g;
+	s/%stime%/$_stime/g;
+	
+	# mxg directory placeholders
+        s/%mxgdir%/$mxgdir/g;
+        s/%preportdir%/$mxgdir\/scb\/reports\/$_prevdate/g;
+        s/%creportdir%/$mxgdir\/scb\/reports\/$_currdate/g;
+        s/%lreportdir%/$mxgdir\/scb\/reports\/$_lastdate/g;
+	    
+	# log directory placeholders
+        s/%logfile%/$logdir\/eod_job.$_stime.$jobcode.log/g;	
+
+	# miscellaneous
+	s/%userid%/$REAL_USER_ID/g;
+	s/%jobcode%/$jobcode/g;
+	s/%retcode%/\$retcode/g;
+    }
+}
+
+# ------------------------------------------------------------------------------
+# Substitute processing script specific placeholders with real values
+sub substPsPlaceholders() {
+    my $jobcode = $_optctl{'jobcode'};
+    my $workdir = getcfg ( "WORK_DIR" ) . "/$_prevdate";
+
+    # search and replace place holders
+    foreach ( @_ ) {
+    
+	# processing script placeholders
+	s/%xmlanswer%/%psrundir%\/answer.xml/g;
+	s/%xmllog%/%psrundir%\/log.xml/g;
+	s/%xmlheader%/%psrundir%\/header.xml/g;
+	s/%xmlrequest%/%psrundir%\/xml_request.xml/g;
+	s/%psrundir%/$workdir\/eod_job.$_stime.$jobcode.psr/g;
+    }
+}
+
+# ------------------------------------------------------------------------------
+# Run a processing script
+sub runProcScript($) {
+    my ($procScript) = @_;
+
+    # first see if we can allocate a session to a user
+    $_svrfname = getcfg ( "PROC_SCRIPT_ENV/SERVER_ALLOC_FILE"   );
+    $_usrfname = getcfg ( "PROC_SCRIPT_ENV/USER_ALLOC_FILE" );
+
+    # assign a user to run the proc script 
+    die "ERROR: couldn't allocate user for proc script $procScript" 
+        unless userAssign ( $_usrfname, $_ps_user, $_usrassign );
+    # assign a server on which to run the proc script
+    die "ERROR: couldn't allocate server for proc script $procScript" 
+	unless serverAssign ( $_svrfname, $_ps_srvcount, $_ps_server,
+	$_svrassign );
+
+    my $cdir = getcfg ( "CLIENT_DIR" );
+    my $java = getcfg ( "PROC_SCRIPT_ENV/XML_REQUEST/JAVABIN" ) . "/java";
+
+    die "mx client dir not in config key /SCB/POS_EOD/CLIENT" if ($cdir eq "");
+
+    my $rundir = buildXmlFiles ( $procScript, $_ps_user );
+
+    # construct the command and parameters
+    my $cmd = "cd $cdir ; $java";
+    my $args = buildPsCmdArgs ( "$rundir/xml_request.xml" );
+    
+    # always report output for main job command
+    my $old_verbose = $_verbose; $_verbose = $_true;
+
+    # execute command
+    my $retcode = execute ( $cmd, $args );
+    
+    $_verbose = $old_verbose;
+ 
+    # de-allocate sessions from user and server
+    deallocAll();
+    
+    return $retcode;
+}
+
+# ------------------------------------------------------------------------------
+# Run an interface script
+sub runInterfaceScript($;$) {
+    my $ifscript = shift;
+    my $retcode = $_failure;
+    
+    my $jobcode = $_optctl{'jobcode'};
+    my $jobcode_lc = lc ( $jobcode );
+    
+    my $mxdir = getcfg ( "MXG_DIR" );
+    my $jddir = getcfg ( "JOB_DEFS_DIR" );
+    
+    reportConfig ( "/$jobcode" ) if $_verbose;
+
+    die "config for $jobcode not found (key name may be wrong in file " .
+	"$jddir/$jobcode_lc.cf)" unless ( @{getKeys("/$jobcode")} > 0 );
+
+    # load up environment variables
+    loadInterfaceEnv();
+    
+    # check required files are present
+    my $filekeys = getKeys ( "/$jobcode/REQUIRED_FILES" );
+    
+    if ( @$filekeys ) {
+    
+	report "checking for required files";
+
+	foreach ( @$filekeys ) {
+
+	    my $reqdfile = getcfg ( "/$jobcode/REQUIRED_FILES/$_" );
+
+	    die "cannot run $jobcode job, required file missing: $reqdfile"
+		unless  -r "$reqdfile";
+	
+	    verbose "\tfound file $reqdfile (ok)";
+	}
+	
+	report "finished checking for required files";
+	report "converting required files to UNIX format";
+    
+	# convert files to unix format (mxg reports produce dos format)
+	foreach ( @$filekeys ) { 
+    
+	    my $reqdfile = getcfg ( "/$jobcode/REQUIRED_FILES/$_" );
+	
+	    verbose "\tconverting file $reqdfile";
+	    
+	    ( dos2unix $reqdfile == $_success ) 
+		or die "couldn't convert $reqdfile to unix format";
+	}
+      
+	report "finished converting required files to UNIX format";
+    }
+
+    # run each of the specified commands
+    my $cmdkeys = getKeys ( "/$jobcode/COMMANDS" );
+    foreach ( sort @$cmdkeys ) {
+
+	my $command = getcfg ( "/$jobcode/COMMANDS/$_" );
+	
+	my ($cmd, $args) = cmdparse ( $command );
+	
+	substGenPlaceholders ( $cmd );
+	substGenPlaceholders ( @$args );
+
+	# always report output for main job command
+	my $old_verbose = $_verbose; $_verbose = $_true;
+	
+	# execute command 
+	$retcode = execute ( $cmd, $args );
+
+	$_verbose = $old_verbose;
+
+	# bail out if command fails, i.e. don't process any more commands
+	last if ( $retcode ne $_success );
+    }
+
+    return $retcode;
+}
+
+# ------------------------------------------------------------------------------
+# load up the environment variable values needed by the interface scripts
+sub loadInterfaceEnv() {
+    my $keys = getKeys ( "INTERFACE_ENV" );
+    my $var;
+    my $depth = 0;
+
+    my @exclusions = ( "POS_EOD_BASE", "SYBASE", "SYBASE_OCS", "CCLPROFILE.*", 
+		       "LD_LIBRARY_PATH", "PATH" );
+
+    # need to set blank values for paths if not defined externally
+    # prevents infinite looping when trying to substitute in self-references
+    $ENV{'LD_LIBRARY_PATH'} = "" if ( !defined $ENV{'LD_LIBRARYPATH'} );
+    $ENV{'PATH'}	    = "" if ( !defined $ENV{'PATH'}	      );
+    
+    # ensure we only use environment as defined in config file by clearing all
+    # env vars, but don't clear env vars listed in exclusions above
+    foreach $var ( keys %ENV ) {
+
+	next if ( ( grep /^$var$/ , @exclusions ) > 0 );
+	delete $ENV{$var};
+    }
+
+    # read config key values into env vars without substituting nested env vars
+    # (ensures all values are available for loop below which does substitute)
+    foreach $var ( @$keys ) {
+	    
+	next if defined $ENV{$var};
+	$ENV{$var} = getcfg ( "INTERFACE_ENV/$var", $_true );
+    }
+
+    # remove PATH and LD_LIBRARY_PATH to allow appending to existing value
+    pop @exclusions; pop @exclusions;
+    
+    # read config key values again this time do substitution for nested env vars
+    # also substitute in values for general %% placeholders
+    foreach $var ( @$keys ) {
+
+	next if ( ( grep /^$var$/ , @exclusions ) > 0 );
+	$ENV{$var} = getcfg ( "INTERFACE_ENV/$var" );
+	substGenPlaceholders ( $ENV{$var} );
+    }
+    
+    verbose "environment variables are:";
+
+    if ( $_verbose ) {
+	foreach ( sort keys %ENV ) { report "\tenv variable $_==$ENV{$_}"; }
+    }
+
+    verbose "end of environment variable list";
+    
+    return 1;
+}
+
+# ------------------------------------------------------------------------------
+# Build the parameters to pass to the PS command
+sub buildPsCmdArgs($) {
+    my $xmlfile = shift;
+    my @args;
+    my $bkey = "PROC_SCRIPT_ENV/XML_REQUEST";
+    my $jobcode = $_optctl{'jobcode'};
+    
+    my $fs_host  = getcfg ( "$bkey/MXJ_FILESERVER_HOST" );
+    my $fs_port  = getcfg ( "$bkey/MXJ_FILESERVER_PORT" );
+    my $jar_list = getcfg ( "$bkey/MXJ_JAR_FILELIST"    );
+    my $jobjavaparms = getcfg ( "/$jobcode/JAVA_PARM_LIST" );
+    my $nicknameext = getcfg ( "/$jobcode/NICKNAME_EXTENSION" );
+    $nicknameext = "" if $nicknameext eq "null";
+
+    push @args, 
+	"-cp " . 
+	getcfg ( "$bkey/MXJ_BOOT" );
+	
+    push @args,
+	"-Djava.security.policy=" . 
+	getcfg ( "$bkey/MXJ_POLICY" );
+	
+    push @args,
+	"-Djava.rmi.server.codebase=http://" .
+	"$fs_host:$fs_port/$jar_list murex.rmi.loader.RmiLoader";
+	
+    push @args,
+	"/MXJ_CLASS_NAME:murex.xml.client.xmllayer.script.XmlRequestScript";
+	
+   #MXJ HOST and PORT no longer required for 2.10 
+       #push @args,
+       #"/MXJ_HOST:" . 
+       #getcfg ( "$bkey/MXJ_HOST" );
+	
+    #push @args,
+    #"/MXJ_PORT:" . 
+    #getcfg ( "$bkey/MXJ_PORT" );
+
+    #MXJ SITE NAME required for 2.10
+    push @args,
+        "/MXJ_SITE_NAME:" .
+        getcfg ( "$bkey/MXJ_SITE_NAME" );
+	
+    push @args,
+	"/MXJ_PLATFORM_NAME:" . 
+	getcfg ( "$bkey/MXJ_PLATFORM_NAME" );
+	
+    push @args,
+	"/MXJ_PROCESS_NICK_NAME:" . 
+	getcfg ( "$bkey/MXJ_PROCESS_NICK_NAME" ) .
+	"$_ps_server\_$_ps_user$nicknameext";
+ 	
+    push @args,
+	"/MXJ_CONFIG_FILE:" . $xmlfile;
+
+    # Optional parms provided in the job's config file in jobdefs
+    # For some reason a config item which is blank gets returned
+    # as the string "null" by getcfg.
+    if ( $jobjavaparms and $jobjavaparms ne "null" ) {
+        push @args, $jobjavaparms;
+    }
+
+    return \@args;
+}
+
+# ------------------------------------------------------------------------------
+# Build XML run files for processing scripts service
+sub buildXmlFiles($$) {
+    my ($pscript , $user) = @_;
+    my $jobcode = $_optctl{'jobcode'};
+
+    my $rname = "eod_job.$_stime.$jobcode.psr";
+    
+    my $templateDir = getcfg ( "XML_DIR" );
+    my $runtimeDir  = getcfg ( "WORK_DIR") . "/$_prevdate/$rname";
+    
+    mkpath ("$runtimeDir", 0, 0777);
+
+    buildXmlReqFile ( $templateDir, $runtimeDir, $user );
+    buildXmlQryFile ( $pscript, $templateDir, $runtimeDir );
+
+    return $runtimeDir;
+}
+
+# ------------------------------------------------------------------------------
+# Build XML request file
+sub buildXmlReqFile($$$) {
+    my ($tdir, $rdir, $user) = @_;
+    
+    my $ifh = new IO::File ("$tdir/xml_request.xml", "r")
+	or die "unable to open $tdir/xml_request.xml template file: $!";
+
+    my $ofh = new IO::File ("$rdir/xml_request.xml", "w")
+	or die "unable to open $rdir/xml_request.xml for writing: $!";
+  
+    verbose ("xml request file:");
+    
+    my $service = getcfg( "PROC_SCRIPT_ENV/XML_REQUEST/MXJ_PROCESS_NICK_NAME" );
+    my $jobcode = $_optctl{'jobcode'};
+    my $nicknameext = getcfg ( "/$jobcode/NICKNAME_EXTENSION" );
+    $nicknameext = "" if $nicknameext eq "null";
+    
+    while ( <$ifh> ) {
+	chomp;
+
+	s/%service_nickname%/$service$_ps_server\_$_ps_user$nicknameext/g;
+	s/%xml_request_header%/$rdir\/header.xml/g;
+	s/%xml_request_body%/$tdir\/ps_body.xml/g;
+	s/%xml_request_answer%/$rdir\/answer.xml/g;
+	s/%xml_request_log%/$rdir\/log.xml/g;
+
+	print $ofh "$_\n";
+	verbose ("\t$_");
+    }
+
+    verbose ("end of xml request file");
+}
+
+# ------------------------------------------------------------------------------
+# Build XML query (header) file, called recursively for each additioanl ps item 
+sub buildXmlQryFile($$$;$$$) {
+    my ($pscript, $tdir, $rdir, $isitem, $itemidx, $ofh) = @_;
+    my $jobcode = $_optctl{'jobcode'};
+    
+    my $ifname = $isitem ? "$tdir/ps_item.xml" : "$tdir/ps_query.xml";
+    
+    my $ifh = new IO::File ( $ifname, "r" ) 
+		or die "unable to open $ifname template file: $!";
+    
+    unless ( $isitem ) {
+	$ofh = new IO::File ("$rdir/header.xml", "w")
+		or die "unable to open $rdir/header.xml for writing: $!";
+	
+	my $jddir = getcfg ( "JOB_DEFS_DIR" );
+	
+        reportConfig ( "/$jobcode" ) if $_verbose;
+	verbose ( "xml query header file:" );
+    }
+    
+    while ( <$ifh> ) {
+	chomp;
+	if ( $_ ne "%script_items%" ) {
+	    
+	    # substitute %% tokens with values specified in config
+
+	    # special case for script name 
+	    $_ =~ s/\%psname\%/$pscript/g;
+
+	    # now substitute any remaining %% tokens on this line
+	    $_ = substPsCfg ( $_, $isitem ?  "/$jobcode/ITEM$itemidx" : 
+					     "/$jobcode/HEADER" );
+	    print $ofh "$_\n";
+	    verbose "\t$_";
+	}
+	else {
+	    
+	    my $idx = 1;
+	    while ( getcfg ( "/$jobcode/ITEM$idx/NAME" ) ) {
+		
+		buildXmlQryFile ($pscript, $tdir, $rdir, $_true, $idx, $ofh);
+		$idx++;
+	    }
+	}
+    }
+    verbose ("end of xml query header file") unless $isitem;
+}
+
+# ------------------------------------------------------------------------------
+# Allocate or de-allocate a physical server from the server allocation file
+sub serverAssign($$;$$) {
+    my ($fname, $count, $server, $serverwanted) = @_;
+    my $oldserver = $server;
+    my $row;
+    
+    # set getserver flag according to operation (allocate or de-allocate)
+    # allocate (no server name supplied) or de-allocate (server name supplied)
+    my $getserver = ( $server eq "" );
+
+    if ((!$getserver) && ($count <= 0)) { return $_true; } # nothing to deallocate
+
+    report "trying to ". ( ($getserver) ? "" : "de-" ) . "allocate server " . 
+	   "$server";
+
+    # open server allocation file
+    my $fh = new IO::File ( "$fname", "r+" )
+	or die "couldn't open file $fname ($!)";
+
+    $fh->autoflush( 1 );
+
+    verbose "trying to get write-lock on server allocation file: $fname ($count)";
+    
+    my $locklog = "$_locklog.server";
+    
+    # try to get exclusive lock on server allocation file
+    unless ( lockfile ( $fh ) ) {
+	report "couldn't lock server allocation file: $fname";
+	showlock( $locklog );
+	die "couldn't lock server allocation file: $fname";
+    }
+
+    loglock ( $locklog, $fname );
+
+    verbose "write-locked server allocation file (ok)";
+
+    # read file into server table hash
+    my $servertable = readAllocFile ( $fh, $fname );
+   
+    # try to allocate session against specified server
+    # If we are allocating more than one session, allocate them to the
+    # same server entry
+    if ( $getserver ) {
+        my $minsessions = -1;
+        my $lowest = -1;
+        for ( my $idx = 0; $idx <= $#{$servertable}; $idx++ ) {
+
+            # Get the current row
+            my $row = $servertable->[$idx];
+
+            # Loop if the server is disabled
+            verbose "$row->[0] disabled." if ( $row->[2] eq "disabled" );
+            next if ( $row->[2] eq "disabled" );
+            # Loop if a specific server is wanted and this isn't it
+            verbose "$row->[0] is not reqd server $serverwanted."
+                if ( $serverwanted and $row->[0] ne $serverwanted );
+            next if ( $serverwanted and $row->[0] ne $serverwanted );
+
+            if ( $minsessions == -1 or $row->[1] < $minsessions ) {
+                $minsessions = $row->[1];
+                $lowest = $idx;
+            } 
+        }
+        if ( $lowest < 0 ) {
+            #Oops couldn't find  a server
+            report "Couldn't find an available server.";
+            return $_false;
+    }
+
+        # If we found a server, add the required number of sessions to
+        # its allocation
+        $servertable->[$lowest][1] += $count;
+    $server = $servertable->[$lowest][0];
+    verbose "Setting $server to $servertable->[$lowest][1] sessions.";
+        
+        # If we are trying to deallocate. If we have more than one session
+        } else {
+        # we will deallocate where we can
+        my $found = $_false;
+        for ( my $donecount = 0; $donecount < $count; $donecount ++) {
+
+            $found = $_false;
+            foreach $row ( @{$servertable} ) {
+
+                # Loop if the server is disabled
+                verbose "$row->[0] disabled." if ( $row->[2] eq "disabled" );
+                next if ( $row->[2] eq "disabled" );
+            
+                if ( $row->[0] eq $server and $row->[1] > 0 ) {
+                    $found = $_true;
+                    $row->[1]--;
+                    verbose "Setting $server to $row->[1] sessions.";
+                    last;
+                }
+            }
+        }
+        if ( not $found ) {
+            # We report that we couldn't complete de-allocation but don't fail
+            report "Couldn't deallocate all sessions for $server.";
+        }
+        $server = ""
+    }
+
+    # write updated allocation table to file
+        writeAllocFile ( $fh, $fname, $servertable );
+
+    # close  server allocation file (automatically releases all lock)
+    close $fh;
+    unlink ( $locklog );
+    verbose "Closed server allocaton file (lock released).";
+
+    # set passed in server to allocated server / blank if de-allocated session
+    $_[2] = $server;
+    
+    if ( $getserver ){ 
+        
+        report "allocated session to run on server $server (ok)";
+    }
+    else {
+        
+        report "de-allocated session from server $oldserver (ok)";
+    }
+
+    return $_true; 
+}
+
+# ------------------------------------------------------------------------------
+# Allocate or de-allocate a session to a user in the user sessions file
+sub userAssign($;$$) {
+    my ($fname, $user, $userwanted) = @_;
+    my $olduser = $user;
+    my $row;
+    
+    # set getuser flag according to operation (allocate or de-allocate session)
+    my $getuser = $_true;			# allocate
+    $getuser = $_false if ( $user ne "" );	# de-allocate
+
+    report  (	"trying to " .  ( ($getuser) ? "" : "de-" ) . 
+		"allocate session for user $user" );
+
+    # open user allocation file
+    my $fh = new IO::File ( "$fname", "r+" )
+	or die "Couldn't open file $fname ($!).";
+
+    $fh->autoflush( 1 );
+
+    verbose "Trying to get write-lock on user allocation file: $fname.";
+    
+    my $locklog = "$_locklog.user";
+
+    # try to get exclusive lock on user allocation file
+    unless ( lockfile ( $fh ) ) {
+	report "Couldn't lock user allocation file: $fname.";
+	showlock( $locklog );
+	die "Couldn't lock user allocation file: $fname.";
+    }
+
+    loglock ( $locklog, $fname );
+
+    verbose "Write-locked user allocation file (ok).";
+
+    # read file into user table array
+    my $usertable = readAllocFile ( $fh, $fname );
+    # Maxsessions must be the first line in the table
+    die "Couldn't find maxsessions in user allocation file ($fname)." 
+	if ( $usertable->[0][0] ne "(maxsessions)" );
+    my $maxsessions = $usertable->[0][1];
+
+    # try to allocate / de-allocate session against specified user
+    my $found = $_false;
+    foreach $row ( @{$usertable} ) {
+
+        # Loop if the row is the maxsessions line
+	verbose "Maxsessions line" if ( $row->[0] eq "(maxsessions)" );
+	next if ( $row->[0] eq "(maxsessions)" );
+	# Loop if this user has been disabled
+	verbose "$row->[0] disabled." if ( $row->[2] eq "disabled" );
+	next if ( $row->[2] eq "disabled" );
+	# Loop if a specific user is wanted and this isn't it
+	verbose "$row->[0] is not reqd user $userwanted."
+	    if ( $userwanted and $row->[0] ne $userwanted );
+	next if ( $userwanted and $row->[0] ne $userwanted );
+    	
+	# If we're allocating a user...
+	if ( $getuser ) {
+	    if ( $row->[1] < $maxsessions ) {
+		$found = $_true;
+		$user = $row->[0];
+		$row->[1]++;
+		verbose "setting $row->[0] to $row->[1] sessions";
+		last;
+	    }
+	} else { # If we're deallocating a user...
+	    if ( $row->[0] eq $user and $row->[1] > 0 ) {
+		$found = $_true;
+		$user = "";
+		$row->[1]--;
+		verbose "setting $row->[0] to $row->[1] sessions";
+		last;
+	    }
+	}
+    }
+    
+    if ( not $found ) {
+	# If we couldn't get an allocation then fail - without writing
+	# the allocation table
+	if ( $getuser ){ 
+	    report "Couldn't find a free user session.";
+	    return $_false;
+	} else {
+	# If we couldn't deallocate the used session, raise a warning
+	# and write back what we have deallocated
+	    report "Couldn't deallocate session for $user. Continuing...";
+	}
+    }
+
+    # write updated allocation table to file
+    writeAllocFile ( $fh, $fname, $usertable );
+
+    # close  user allocation file (automatically releases all lock)
+    close $fh;
+    unlink ( $locklog );
+
+    verbose "Closed user allocaton file (lock released)";
+
+    # set passed in username to allocated user / blank if de-allocated session
+    $_[1] = $user;
+    
+    if ( $getuser ){ report "Allocated session to user $user (ok)" }
+    else { report "De-allocated session from user $olduser (ok)" }
+
+    return $_true; 
+}
+
+# ------------------------------------------------------------------------------
+# Read allocation file into an array (used for user and server allocation files)
+sub readAllocFile($$) {
+    my ($fh, $fname) = @_;
+    my @table;
+    my $maxsessions;
+
+    verbose "reading allocation file $fname";
+
+    my $line = 0;
+    while ( <$fh> ) {
+	chomp;
+	$line++;
+	verbose "\tline $line: $_";
+
+	#my ($name, $sessions, $enabled) = split /:/;
+	push @table, [ split /:/ ] ;
+    }
+
+    verbose "read allocation file into internal array";
+
+    return ($maxsessions, \@table);
+}
+
+# ------------------------------------------------------------------------------
+# Write allocation array to file (used for server and user allocation files)
+sub writeAllocFile($$$) {
+    my ($fh, $fname, $table) = @_;
+    my $row;
+    my $txtout;
+    
+    verbose "writing allocation file $fname";
+
+    # go to beginning of file
+    seek ( $fh, 0, 0 );
+
+    my $line = 0;
+
+    foreach $row ( @{$table} ) { 
+
+	$line++;
+	$txtout = join(":",@{$row}); 
+	print $fh "$txtout\n"; 
+	verbose "\tline $line: $txtout";
+    }
+
+    # chop off any remaining lines
+    truncate ( $fh, tell ( $fh ) );
+
+    verbose "written internal array to allocation file";
+
+    return 1;
+}
+
+# ------------------------------------------------------------------------------
+# Raise SNMP trap
+sub snmpTrap($$) {
+    my ($trapid, $text) = @_;
+    my ($envfile, $bindir, $snmpexe);
+
+    # don't try to riase another snmp if fatal error occurs during this routine
+    my $old_send_traps = $_send_traps;
+    $_send_traps = $_false;
+    my($sendtrap);
+
+    $_tab++;
+
+    # get the open view snmp directories
+    if ( defined $_profile ) {
+
+	$envfile = getcfg ( "ERROR_HANDLING/OVENV"    );
+	$bindir  = getcfg ( "ERROR_HANDLING/OVBIN"    );
+	$snmpexe = getcfg ( "ERROR_HANDLING/SNMPTRAP" );
+	$sendtrap = getcfg ( "ERROR_HANDLING/SENDTRAP" );
+    }
+
+    report "trap id is empty, using hardcoded default" if ( $trapid eq "" );
+    
+    # check for blank values from config, this would mean config profile not
+    # loaded, so set to hardcoded defaults to allow snmp to be raised
+    $trapid  = ( $trapid  eq "" ) ? $_def_trapid  : $trapid;
+    $envfile = ( $envfile eq "" ) ? $_def_envfile : $envfile;
+    $bindir  = ( $bindir  eq "" ) ? $_def_bindir  : $bindir;
+    $snmpexe = ( $snmpexe eq "" ) ? $_def_snmpexe : $snmpexe;
+    $sendtrap = ( $sendtrap eq "" ) ? $_def_sendtrap : $sendtrap;
+    
+    $envfile =~ s/%hostname%/$_hostname/;
+
+    #verbose "snmp environment file: $envfile";
+    #verbose "snmp executable: $bindir/$snmpexe";
+
+    #my $envfh = new IO::File ( $envfile, "r" )
+	#or die "couldn't open the snmp environment set-up file ($envfile)";
+
+    #my %snmpenv;
+
+    # read in snmp environment variables
+    #while ( <$envfh> ) {
+	#chomp;
+	#if ( /^(.+)=(.+)$/ ) {
+	#    my ($var, $val) = split /=/; 
+	#    $snmpenv{$var} = $val; 
+	#    verbose "snmp environment var $var=$snmpenv{$var}";
+	#}
+    #}
+    
+    # set-up snmp arguments
+    #my @args;
+    #push @args, $snmpenv{'OVNODE'};
+    #push @args, $snmpenv{'OVENTERPRISE'};
+    #push @args, $_hostname;
+    #push @args, $trapid;
+    #push @args, "\"\"";
+    #push @args, $snmpenv{'OVENTERPRISE'};
+    #push @args, "octetstringascii";
+    #push @args, $text;
+    
+    # call snmptrap with correct params 
+    #( execute ( "$bindir/$snmpexe" , \@args ) == $_success ) 
+    #    or die "couldn't raise SNMP trap";
+
+    my($cmd) = "$sendtrap \"$trapid\" $text 2>&1; echo REPLY=\$?";
+    report "$cmd";
+    my($line);
+    my($okay) = $_false;
+    open EXEC, "$cmd |";
+    while ($line = <EXEC>) {
+        $line =~ s/\s+$//;
+        if ($line =~ m/REPLY=0/) {
+           $okay = $_true;
+        } else {
+           report $line; 
+        }
+    }
+    close EXEC;
+    if (! $okay) {
+       die "couldn't raise SNMP trap";
+    }
+
+    report "sent SNMP trap (id $trapid): $text";
+
+    $_tab--;
+
+    $_send_traps = $old_send_traps;
+
+    return 1;
+}
+
+# ------------------------------------------------------------------------------
+sub send_email($) {
+        my($text) = @_;
+
+        my $mailing_list      = getcfg("ERROR_HANDLING/POSTPROC_HANDLING/MAILING_LIST");
+        my $mailing_from      = getcfg("ERROR_HANDLING/POSTPROC_HANDLING/MAILING_FROM");
+        my $production_domain = getcfg("ERROR_HANDLING/PRODUCTION_DOMAIN");
+        my $jobcode           = $_optctl{'jobcode'};
+    my $subject           = "$jobcode FAILED";
+
+    $text =~ s/^"//;
+    $text =~ s/"$//;
+        report "sending mail: $text";
+
+        # test if email is coming from production or test environment
+        my $domainname   = `/usr/bin/domainname`;
+    $domainname =~ s/\s*$//;
+    if ( $domainname ne $production_domain ) {
+       report "Production domain is $production_domain, this domain is $domainname";
+       my($hostname)    = `/usr/bin/uname -n`;
+       $hostname =~ s/\s*$//;
+       $subject = "$hostname:$subject";
+       $text = "Message sent from server $hostname.$domainname \n\n" . $text;
+    }
+
+    if ( $mailing_from ne "" ) {
+       $mailing_from = "-r $mailing_from";
+    }
+
+        # send email
+        `/bin/mailx -s "$subject" $mailing_from $mailing_list <<EOD
+$text
+EOD`;
+}
+
+# ------------------------------------------------------------------------------
+# Determine if current time is within the WORKING_HOURS
+sub working_hours() {
+   my($currmin, $currhour, $currday) = (localtime())[1,2,6];
+   my($weekday) = ('SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY')[$currday];
+   my($working_day) = getcfg ("ERROR_HANDLING/POSTPROC_HANDLING/WORKING_HOURS/$weekday");
+
+   if ( length($working_day) == 0 ) { return $_false; } # non-working day
+
+   my($starthour,$startmin, $endhour, $endmin);
+   if (!(($starthour,$startmin, $endhour, $endmin) = $working_day =~ m/(\d\d):(\d\d)[\s-]+(\d\d):(\d\d)/)) {
+      report "$weekday for WORKING_HOURS is incorrectly formatted in configuration file\n"; 
+      return $_false; # faulty declaration
+   }
+
+   my($currallmins)  = $currhour * 60 + $currmin;
+   my($startallmins) = $starthour * 60 + $startmin;
+   my($endallmins)   = $endhour * 60 + $endmin;
+   if (($currallmins >= $startallmins) && ($currallmins <= $endallmins)) {
+      return $_true;
+   } else {
+      return $_false;
+   }
+}
+
+# ------------------------------------------------------------------------------
+# Get the error handling config
+sub getErrConfig($) {
+    my $level	= shift;
+    my $bkey	= "ERROR_HANDLING/POSTPROC_HANDLING";
+    
+    # determine the severity level
+    my $severity = "DEF";
+    my $sevlist	 = getKeys ( "$bkey/SEVERITY" );
+    
+    foreach ( @$sevlist ) {
+	
+	my $severitydef = getcfg ( "$bkey/SEVERITY/$_" );
+	my ($min, $max) = split /,/, $severitydef;
+	
+	if ( limitcheck ( $level, $min, $max ) ) { $severity = $_; last }
+    }
+
+    # determine the timezone
+    my $timezone = "DEF";
+    if ((working_hours()) && (getcfg("$bkey/ACTIONS/WORKING_TIME/DEF/SNMP"))) {
+       $timezone = "WORKING_TIME";
+    } else {
+
+       my $timelist = getKeys ( "$bkey/TIMEZONES" );
+    
+       foreach ( @$timelist ) {
+	
+          my $timezonedef = getcfg ( "$bkey/TIMEZONES/$_" );
+	      my ($hr1, $min1, $hr2, $min2) = split /[:-]/, $timezonedef;
+	
+	      my $timemin = $hr1*60 + $min1;
+	      my $timemax = $hr2*60 + $min2;
+	      my $timenow = timestamp("%H")*60 + timestamp("%M");
+
+	      if ( between ( $timenow, $timemin, $timemax ) ) { $timezone = $_; last }
+       }
+    }
+
+    # determine the actions to take
+    my $snmp = getcfg ( "$bkey/ACTIONS/$timezone/$severity/SNMP" );
+    my $stop = getcfg ( "$bkey/ACTIONS/$timezone/$severity/STOP" );
+
+    unless ( $stop eq "YES" or $stop eq "NO" ) {
+	
+	$stop = "YES";
+	
+	report "STOP flag not recognised ($stop) for config key " .
+	       "($bkey/ACTIONS/$timezone/$severity/STOP), assuming stop is YES";
+    }
+
+    if ( $snmp eq "" ) {
+	
+	report "SNMP key is empty for config key ($bkey/ACTIONS/$timezone" .
+	       "/$severity/STOP), hardcoded default will be used instead";
+    }
+
+    my $email = getcfg ( "$bkey/ACTIONS/$timezone/$severity/EMAIL" );
+    if ( $email eq "" ) {
+       $email = getcfg ( "$bkey/ACTIONS/$timezone/DEF/EMAIL" );
+    }
+    if ($email ne "YES" and $email ne "NO") { $email = "NO"; }
+
+    verbose "timezone ($timezone), severity ($severity), " . 
+            "snmp key ($snmp), stop flag ($stop) email ($email)";
+
+
+    return ($snmp, $stop, $email);
+}
+
+# ------------------------------------------------------------------------------
+# Return the requested keys beneath the specified field in the config file
+sub getKeys($) {
+    my $field = shift;
+
+    $field = "/SCB/POS_EOD/". $field unless $field =~ /^\/(.*)/;
+    
+    my @keys = $_profile->get_keys ( $field );
+
+    return \@keys;
+}
+
+# ------------------------------------------------------------------------------
+# Return the requested value from the config file
+sub getcfg($;$) {
+    my ($field, $nosubst) = @_;
+    my $depth = 0;
+
+    $field = "/SCB/POS_EOD/". $field unless $field =~ /^\/(.*)/;
+
+    # extract the requested value
+    my $value = $_profile->get_value ( $field );
+
+    # assign an empty value if none was defined
+    $value = "" unless defined $value;
+
+    $value = clean ( $value );
+    
+    unless ( defined $nosubst ) {
+
+	# environment variable substitution
+	while ( $value =~ /\$(\w+)/ ) {
+
+	    $value =~ s/\$(\w+)/$ENV{$1}/g;
+
+	    die "cannot resolve nested environment variable in key $field"
+		unless ( $depth++ < 100 );
+	}
+    }
+
+    return $value;
+}
+
+# ------------------------------------------------------------------------------
+# Return the xml template line with correct processing script values substituted
+sub substPsCfg($$) {
+    my ($line, $basekey) = @_;
+
+    # config placeholder substitution
+    while ( $line =~ /\%(\w+)\%/ ) {
+
+	my $cfgitem = uc($1);
+	my $value = getcfg ( "$basekey/$cfgitem" );
+	$line =~ s/\%$1\%/$value/g;
+    }
+    
+    return $line;
+}
+
+# ------------------------------------------------------------------------------
+# Gets the business processing date
+sub busdate($;$) {
+    my ($delim, $type) = @_;
+    my ($year, $month, $day);
+    
+    $type = "previous" unless ( defined $type );
+
+    die "can't extract date for type ($type)" 
+	unless ( $type eq "current" or $type eq "previous"
+	or $type eq "last" or $type eq "last-1" );
+	
+    my $datefile = getcfg ( "MXG_DIR" ) . "/scb/reports/dates";
+
+    if ( $type eq "last" or $type eq "last-1" ) {
+	$datefile .= "/date_la.txt";
+    }
+    else {
+	$datefile .= "/date_td.txt";
+    }
+	
+    my $ifh = new IO::File ("$datefile", "r")
+	or die "unable to open date file $datefile: $!";
+    
+    my $line = <$ifh>; $ifh->close();
+
+    if ( $type eq "previous" or $type eq "last-1") {
+        $year   = substr ( $line, 9, 4 );
+	$month  = substr ( $line, 14, 2 );
+	$day    = substr ( $line, 17, 2 );
+    }
+    else {
+        $year   = substr ( $line, 28, 4 );
+	$month  = substr ( $line, 33, 2 );
+	$day    = substr ( $line, 36, 2 );
+    }
+
+    return "$year$delim$month$delim$day"
+}
+
+# ------------------------------------------------------------------------------
+# Log details of file just locked 
+sub loglock($$) {
+    my ($locklog, $fname) = @_;
+
+    my $fh = new IO::File ( $locklog, "w" )
+	or die "couldn't open the flock log: $locklog";
+    
+    print $fh "file:"		. $fname;
+    print $fh "\nlock_time:"	. localtime();
+    print $fh "\npid:"		. $PID;
+    print $fh "\ncmd:"		. $PROGRAM_NAME;
+    print $fh "\nargs:"; 
+    
+    foreach ( keys %_optctl ) { print $fh "-$_ $_optctl{$_} " }
+    
+    print $fh "\nuid_eff:"	.   $EFFECTIVE_USER_ID;
+    print $fh "\nuid_real:"	.   $REAL_USER_ID;
+
+    close $fh;
+}
+
+# ------------------------------------------------------------------------------
+#  Print details of lock log to stdout
+sub showlock($) {
+    my $locklog = shift;
+    
+    my $fh = new IO::File ( $locklog, "r" )
+	or die "couldn't open the flock log: $locklog";
+    
+    report "contents of lock log: $locklog";
+
+    while ( <$fh> ) { 
+	chomp;
+	report "\t$_"
+    }
+
+    report "end of contents of lock log: $locklog";
+    close $fh;
+}
+
+# ------------------------------------------------------------------------------
+# Get the current recorded duration
+sub getduration() {
+    my $duration = $_timer->duration("nop");
+
+    my $secs = $1 if ($duration =~ /\s*(\d+) wallclock/);
+
+    return $secs;
+}
+
+1;
+
+#-- EOF
+
+
 ## balance
 + /shared/opt/SCB/pos_eod/live/scripts/eod_task.pl -jobcode DSVAR03 -config irdfxdev9 
 BASEDIR=/shared/opt/SCB/pos_eod/POS_EOD_GL_4.1.0
