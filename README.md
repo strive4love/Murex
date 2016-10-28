@@ -89,3 +89,42 @@ All:      1
 
 2016_06_18 07:09:39 end of job DSVAR03 (failed)
 2016_06_18 07:09:39 job DSVAR03 took  2 wallclock secs ( 0.02 usr  0.05 sys +  1.00 cusr  0.31 csys =  1.38 CPU)
+
+
+## ## putty ##
+Mai_title: Emailing: putty download method.zip  / FW: Tools Share 
+
+## Aqua Data Studio ##
+
+
+
+## Set up VPN software client## 
+Mail_Title: Follow Up - 8308129-001-201 - VPN Setup
+
+## Set up Printer Driver## 
+Mail_Title: RMS# 8327306-007-101 add printer driver
+Doc: Job\Document\Set_up_printer
+
+## Outlook ## Add WenJun & Tony ( Zhu Bing ) into mail grp 
+Firstly make sure you have store the group as your contact, then open the group contact and then double click the group name and pop out a pannel and then click the 'modify number'.
+
+ 
+## Timesheet ## Submit timesheet in WorkWise.
+Doc: Job\Document\TimeSheet
+	
+
+## Self-Regist in JIRA ##
+https://jira.uk.standardchartered.com:8443/secure/Dashboard.jspa (Note visit it with Chrome not IE,and the url is incorrect in Job\Document\SetupDevelopmentEnvironment\New Joiners.docx)  
+
+
+## VPN don't work ##
+check Preferences->Block connections to untrusted server(check out this item)
+
+
+## Control-M ????????????????????????????
+ITIL(Information Technology Infrastructure Library),信息技术基础架构库，由英国政府部门CCTA(Central Computing and Telecomunications Agency)在20世纪80年代末制定，现由英国商务部（0
+BSM(Business Service Management),业务服务管理，
+Control-M production is developed by BMC software Corporation ,
+
+
+## Excel - vlookup ??????????????????????
