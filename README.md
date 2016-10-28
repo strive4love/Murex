@@ -5375,3 +5375,1619 @@ if [ $STOPALL = 1 ] ; then
         Kill_All
 fi
 #END of SCRIPT
+
+
+
+## DB TABLES Related with  Datamart reporting 
+. TAB_UDF_DEALALL_REP
+Description	Column_name	Type	Length	Prec	Scale	Nulls	Default_name	Rule_name	Access_Rule_name	Identity
+----------------	--------------	------------------------------	---------	-------	--------	--------	---------------------------	------------	-------------------	-----------
+	TIMESTAMP	timestamp	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+	M_IDENTITY	numeric	5	9	0	FALSE	(null)	(null)	(null)	TRUE
+	M_AAG_BNDRY	char	1	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_AAG_PERIOD	numeric	3	4	0	FALSE	(null)	(null)	(null)	FALSE
+	M_AAG_TRNCHE	char	15	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_CONFO_ID	numeric	6	10	0	FALSE	(null)	(null)	(null)	FALSE
+	M_CSA_EXCLUD	char	2	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_INDEP_AMT	numeric	9	17	2	FALSE	(null)	(null)	(null)	FALSE
+	M_IND_AMTCCY	char	3	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_MARKETER	char	30	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_MX_REF_JOB	numeric	6	10	0	FALSE	(null)	(null)	(null)	FALSE
+	M_NACK_AMEND	char	30	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_NACK_COMME	char	30	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_NACK_REASO	char	30	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_NACK_REQUE	char	30	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+Trade Number	M_NB	numeric	6	10	0	FALSE	(null)	(null)	(null)	FALSE
+	M_NOTIONAL	numeric	10	20	5	FALSE	(null)	(null)	(null)	FALSE
+	M_PRICE_CAP	char	20	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_REF_DATA	numeric	6	10	0	FALSE	(null)	(null)	(null)	FALSE
+	M_SRC_SYSTEM	char	10	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_STRUCT_ID	numeric	8	15	0	FALSE	(null)	(null)	(null)	FALSE
+	M_CFTC_BFH	char	1	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_CNTP_SNAME	char	15	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_LCH_CLR_ID	char	30	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+	M_OLD_CPTY	char	15	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+	M_EXT_REF_NB	char	40	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+	M_NOVATED	char	20	(null)	(null)	FALSE	TAB_UDF_DE_M_NOVA_493658221	(null)	(null)	FALSE
+	M_NOV_DT	datetime	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+	M_NOV_TRD_DT	datetime	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+	M_ORIG_CPTY	char	15	(null)	(null)	FALSE	TAB_UDF_DE_M_ORIG_509658278	(null)	(null)	FALSE
+	M_OLD_NB_EXT	numeric	6	10	0	FALSE	TAB_UDF_DE_M_OLD__525658335	(null)	(null)	FALSE
+										
+										
+Comment: 										
+Those 5 classified production's common attributes are collected in this table. 是5类产品UDF表中字段的交集										
+///DM_DATES_REP
+	Column_name	Type	Length	Prec	Scale	Nulls	Default_name	Rule_name	Access_Rule_name	Identity
+	TIMESTAMP      	timestamp	8			1				0
+	M_IDENTITY     	numeric	5	9	0	0				1
+	M_CONSO_DATE   	datetime	8			1				0
+	M_DATE_REP     	datetime	8			1				0
+	M_MX_REF_JOB   	numeric	6	10	0	0				0
+	M_REF_DATA     	numeric	6	10	0	0				0
+The new rolled date  (= trl + U ),System date	M_REP_DATE0    	datetime	8			1				0
+New rolled date -2	M_REP_DATE_1   	datetime	8			1				0
+New rolled date -1(previous business date), EOD 	M_REP_DATE_2   	datetime	8			1				0
+	M_DATE_TPLS2   	datetime	8			1				0
+										
+	sp_help DM_DATES_REP									
+										
+Note:  Every day system need to roll date. Once roll date completed this table will be update. 										
+////TABLE#LIST#CLASSIFI_REP
+Description	Column_name	Type	Length	Prec	Scale	Nulls	Default_name	Rule_name	Access_Rule_name	Identity
+	TIMESTAMP      	timestamp	8			1				0
+	M_IDENTITY     	numeric	5	9	0	0				1
+	M__ID_         	numeric	6	10	0	0				0
+	M_OPERATION    	char	1			0				0
+	M_STP          	char	1			0				0
+	M_USER_GRP     	char	30			0				0
+										
+										
+Murex Security Matrix 表，描述各个group是否有operation的权限										
+///TAB_TRN_IRD_PL1_REP（PL1表）
+Description	Column_name	Type	Length	Prec	Scale	Nulls	Default_name	Rule_name	Access_Rule_name	Identity
+---------------	---------------	---------	---------	-------	--------	--------	---------------	------------	-------------------	-----------
+	TIMESTAMP	timestamp	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+	M_IDENTITY	numeric	5	9	0	FALSE	(null)	(null)	(null)	TRUE
+	M_C_CUR_PL	char	3	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_C_PL_DT	char	10	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_DATE_REP0	datetime	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+	M_DATE_REP1	datetime	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+EOD date (闭市日期，往往是system date -1)	M_DATE_REP2	datetime	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+	M_H_ACCCPN	numeric	11	24	4	FALSE	(null)	(null)	(null)	FALSE
+	M_H_MPCLEAN	numeric	11	23	4	FALSE	(null)	(null)	(null)	FALSE
+underlying instrument	M_INSTRUMENT	char	20	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_INTVAL2	numeric	9	19	5	FALSE	(null)	(null)	(null)	FALSE
+	M_MP_R2	numeric	6	11	4	FALSE	(null)	(null)	(null)	FALSE
+	M_MP_RF1	numeric	6	11	4	FALSE	(null)	(null)	(null)	FALSE
+	M_MP_RF2	numeric	6	11	4	FALSE	(null)	(null)	(null)	FALSE
+	M_MP_SPOT2	numeric	8	16	6	FALSE	(null)	(null)	(null)	FALSE
+	M_MP_SPOT22	numeric	8	16	6	FALSE	(null)	(null)	(null)	FALSE
+	M_MP_SPOTC2	numeric	8	16	11	FALSE	(null)	(null)	(null)	FALSE
+	M_MP_SWAP2	numeric	6	12	4	FALSE	(null)	(null)	(null)	FALSE
+	M_MP_UDDRP11	numeric	5	9	4	FALSE	(null)	(null)	(null)	FALSE
+	M_MP_UDDRP12	numeric	5	9	4	FALSE	(null)	(null)	(null)	FALSE
+	M_MP_UDDRP21	numeric	5	9	4	FALSE	(null)	(null)	(null)	FALSE
+	M_MP_UDDRP22	numeric	5	9	4	FALSE	(null)	(null)	(null)	FALSE
+	M_MP_UPRC2	numeric	10	21	11	FALSE	(null)	(null)	(null)	FALSE
+	M_MP_VOL1	numeric	5	9	4	FALSE	(null)	(null)	(null)	FALSE
+	M_MP_VOL2	numeric	5	9	4	FALSE	(null)	(null)	(null)	FALSE
+	M_MRPL_ONB	numeric	6	10	0	FALSE	(null)	(null)	(null)	FALSE
+Portfolio name	M_MX_PFOLIO	char	16	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_MX_REF_JOB	numeric	6	10	0	FALSE	(null)	(null)	(null)	FALSE
+Trade Number	M_NB	numeric	6	10	0	FALSE	(null)	(null)	(null)	FALSE
+External Sequential Number(Trade number in another system)	M_NB_EXT	numeric	6	10	0	FALSE	(null)	(null)	(null)	FALSE
+Currency of Leg 1	M_PLIRDCUR1	char	3	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+Currency of Leg 2	M_PLIRDCUR2	char	3	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+Fixed/Variable indicator for Leg 1	M_PLIRDFIX1	char	1	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+Fixed/Variable indicator for Leg 2	M_PLIRDFIX2	char	1	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_PLIRDFPV10	numeric	8	16	2	FALSE	(null)	(null)	(null)	FALSE
+	M_PLIRDFPV11	numeric	8	16	2	FALSE	(null)	(null)	(null)	FALSE
+	M_PLIRDFPV12	numeric	8	16	2	FALSE	(null)	(null)	(null)	FALSE
+	M_PLIRDFPV20	numeric	8	16	2	FALSE	(null)	(null)	(null)	FALSE
+	M_PLIRDFPV21	numeric	8	16	2	FALSE	(null)	(null)	(null)	FALSE
+	M_PLIRDFPV22	numeric	8	16	2	FALSE	(null)	(null)	(null)	FALSE
+	M_PL_CGR1	numeric	11	23	6	FALSE	(null)	(null)	(null)	FALSE
+	M_PL_CGR2	numeric	11	23	6	FALSE	(null)	(null)	(null)	FALSE
+	M_PL_CGU1	numeric	11	23	6	FALSE	(null)	(null)	(null)	FALSE
+	M_PL_CGU2	numeric	11	23	6	FALSE	(null)	(null)	(null)	FALSE
+	M_PL_CSFI2	numeric	11	23	6	FALSE	(null)	(null)	(null)	FALSE
+	M_PL_CSNFCP2	numeric	11	23	6	FALSE	(null)	(null)	(null)	FALSE
+	M_PL_CSNFRV2	numeric	11	23	6	FALSE	(null)	(null)	(null)	FALSE
+	M_PL_FE2	numeric	11	23	6	FALSE	(null)	(null)	(null)	FALSE
+	M_PL_FEFI2	numeric	11	23	6	FALSE	(null)	(null)	(null)	FALSE
+	M_PL_FMV2	numeric	11	23	6	FALSE	(null)	(null)	(null)	FALSE
+	M_PL_FPFCP2	numeric	11	23	6	FALSE	(null)	(null)	(null)	FALSE
+	M_PL_FPFRV2	numeric	11	23	6	FALSE	(null)	(null)	(null)	FALSE
+	M_PL_FPNFCP2	numeric	11	23	6	FALSE	(null)	(null)	(null)	FALSE
+	M_PL_FPNFRV2	numeric	11	23	6	FALSE	(null)	(null)	(null)	FALSE
+	M_PL_FTFI2	numeric	11	23	6	FALSE	(null)	(null)	(null)	FALSE
+	M_PL_MVFCP2	numeric	11	23	6	FALSE	(null)	(null)	(null)	FALSE
+	M_PL_MVFRV2	numeric	11	23	6	FALSE	(null)	(null)	(null)	FALSE
+	M_PL_NFMV2	numeric	11	23	6	FALSE	(null)	(null)	(null)	FALSE
+	M_PL_RVR2	numeric	11	23	6	FALSE	(null)	(null)	(null)	FALSE
+	M_PL_RVU2	numeric	11	23	6	FALSE	(null)	(null)	(null)	FALSE
+	M_PR_CTYACR2	numeric	8	16	2	FALSE	(null)	(null)	(null)	FALSE
+Father trade number of curenttrade number	M_QTY_INDEX	numeric	3	3	0	FALSE	(null)	(null)	(null)	FALSE
+	M_REF_DATA	numeric	6	10	0	FALSE	(null)	(null)	(null)	FALSE
+Initial accrued coupon	M_TP_ACCCPN	numeric	6	12	7	FALSE	(null)	(null)	(null)	FALSE
+Initial accrued coupon (2)	M_TP_ACCCPN2	numeric	6	12	7	FALSE	(null)	(null)	(null)	FALSE
+A/B/D/E/Q	M_TP_AE	char	1	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+经纪人？	M_TP_BROKER0	char	15	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+经纪人？	M_TP_BROKER1	char	15	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+经纪人？	M_TP_BROKER2	char	15	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+经纪人？	M_TP_BROKER3	char	15	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+B or S	M_TP_BUY	char	1	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_BUY_E	char	1	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_CMDFYS0	char	20	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_CMDFYS1	char	20	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+First settlement date (COM futures)- moves with Maturity date	M_TP_CMGSF0	datetime	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+	M_TP_CMGSF1	datetime	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+	M_TP_CMLDIR0	char	3	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_CMLDIR1	char	3	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_CMULAB0	char	25	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_CMULAB1	char	25	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_CMUQ0	char	20	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_CMUQ1	char	20	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_CMUQU0	char	20	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_CMUQU1	char	20	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+Counter party	M_TP_CNTRP	char	15	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_CNTRPFN	char	255	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_CNTRPLB	char	50	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+C or F or  P or S 	M_TP_CP	char	1	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_CREATOR	numeric	6	10	0	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_DELIVER	char	20	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_DIGPAY	numeric	8	16	2	FALSE	(null)	(null)	(null)	FALSE
+trade过期日期 	M_TP_DTEEXP	datetime	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+	M_TP_DTEFST	datetime	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+	M_TP_DTEFXGF	datetime	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+	M_TP_DTEFXGL	datetime	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+	M_TP_DTEPMT	datetime	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+	M_TP_DTEPMT2	datetime	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+System Creation Date (when trade was created)	M_TP_DTESYS	datetime	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+trade交易日期	M_TP_DTETRN	datetime	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+	M_TP_DTEUND	datetime	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+C or D	M_TP_DVCS	char	1	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+城市名称i.e. SHUZHOU/NEWYORK	M_TP_ENTITY	char	10	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+i.e. AED	M_TP_FEECUR0	char	3	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+i.e. TWO	M_TP_FEECUR1	char	3	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_FEECUR2	char	3	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_FEECUR3	char	3	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_FXBRWED	datetime	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+	M_TP_FXBRWSD	datetime	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+	M_TP_FXCTPDE	char	3	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_FXCTPFF	numeric	6	10	0	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_FXCTPNU	char	3	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_FXCTSFF	numeric	8	15	7	FALSE	(null)	(null)	(null)	FALSE
+N 不是internal trade; Y 是internal trade. 注：murex 内部portfolio to portfolio 的trade叫internal trade(没有conterparty).	M_TP_INT	char	1	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_IPAY	numeric	8	16	2	FALSE	(null)	(null)	(null)	FALSE
+XG3	M_TP_IPAYCUR	char	3	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+i.e. 0.09999999	M_TP_IQTY	numeric	11	24	8	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_LQTY1	numeric	11	24	8	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_LQTY2	numeric	11	24	8	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_LQTYS1	numeric	11	24	8	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_LQTYS2	numeric	11	24	8	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_MKTNDX	char	40	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_MOPCRT	numeric	2	1	0	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_MOPCRTD	datetime	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+	M_TP_MOPCRTL	char	10	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_MOPCRTS	char	5	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+"   when PL.M_TP_MOPLST=1
+    then 'Exercise'
+    when PL.M_TP_MOPLST=2
+    then 'Expiry'
+    when PL.M_TP_MOPLST=3
+    then 'Early Termination'
+    when PL.M_TP_MOPLST=4
+    then 'Netting'
+    when PL.M_TP_MOPLST=5
+    then 'Restructure'
+    when PL.M_TP_MOPLST=6
+    then 'Cancel & reissue'
+    when PL.M_TP_MOPLST=7
+    then 'Cancel'
+    when PL.M_TP_MOPLST =0
+    and HDR.M_MOP_CREAT =1
+    then 'Exercise'
+    when PL.M_TP_MOPLST =0
+    and HDR.M_MOP_CREAT =2
+    then 'Expiry'
+    when PL.M_TP_MOPLST =0
+    and HDR.M_MOP_CREAT =3
+    then 'Early Termination'
+    when PL.M_TP_MOPLST =0
+    and HDR.M_MOP_CREAT =4
+    then 'Netting'
+    when PL.M_TP_MOPLST =0
+    and HDR.M_MOP_CREAT =5
+    then 'Restructure'
+    when PL.M_TP_MOPLST =0
+    and HDR.M_MOP_CREAT =6
+    then 'Cancel & reissue'
+    when PL.M_TP_MOPLST =0
+    and HDR.M_MOP_CREAT =7
+    then 'Cancel'
+    else 'UNKNOWN'"	M_TP_MOPLST	numeric	2	1	0	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_MOPLSTD	datetime	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+Market operation(What has been done on the current trade)	M_TP_MOPLSTL	char	10	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+i.e. 35078	M_TP_NBLTI	numeric	6	10	0	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_NOMCUR	char	3	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+i.e.  1.30	M_TP_NOMINAL	numeric	9	19	2	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_OBAR1	numeric	8	16	6	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_OBAR2	numeric	8	16	6	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_OBARTYP	char	10	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_PAYCUR	char	3	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+port folio	M_TP_PFOLIO	char	15	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_QTYEQ	numeric	11	24	8	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_RTACR02	numeric	8	16	2	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_RTACR12	numeric	8	16	2	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_RTAMO	char	20	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_RTCCP02	numeric	12	25	8	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_RTCCP12	numeric	12	25	8	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_RTCUR0	char	3	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_RTCUR1	char	3	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_RTDXC02	datetime	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+	M_TP_RTDXC12	datetime	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+	M_TP_RTDXG02	datetime	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+	M_TP_RTDXG12	datetime	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+	M_TP_RTDXP02	datetime	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+	M_TP_RTDXP12	datetime	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+	M_TP_RTFV0	char	1	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_RTFV1	char	1	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_RTFXC02	numeric	9	19	6	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_RTFXC12	numeric	9	19	6	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_RTFXSPT	numeric	8	16	4	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_RTMAT0	datetime	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+	M_TP_RTMAT1	datetime	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+	M_TP_RTMBDC0	char	10	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_RTMBDC1	char	10	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_RTMNDX0	char	20	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_RTMNDX1	char	20	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_RTPR0	char	1	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_RTPR1	char	1	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_RTRFCT0	numeric	5	9	4	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_RTRFCT1	numeric	5	9	4	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_SECCOD	char	15	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_SECISSU	char	40	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_STATUS0	char	10	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_STATUS1	char	10	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+Current trade statrus(LIVE or DEAD)	M_TP_STATUS2	char	10	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+现货价格	M_TP_STRIKE	numeric	9	18	8	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_STRIKE2	numeric	9	18	8	FALSE	(null)	(null)	(null)	FALSE
+交易策略（如Breakouts，Retracements，Novation）	M_TP_STRTGY	char	15	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+Trader name	M_TP_TRADER	char	10	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_TYPO	char	20	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_UQTY	char	10	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_UQTYEQ	char	10	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_VALSTAT	char	4	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+"Production (COM  
+CRD  
+CURR 
+IRD  
+SCF)"	M_TRN_FMLY	char	5	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+classify as per production	M_TRN_GRP	char	5	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+further classify	M_TRN_TYPE	char	5	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_FXUND	char	3	(null)	(null)	FALSE	(null)	(null)	(null)	FALSE
+	M_TRN_GTYPE	numeric	3	3	0	FALSE	(null)	(null)	(null)	FALSE
+	M_MRPL_DATE	datetime	8	(null)	(null)	TRUE	(null)	(null)	(null)	FALSE
+	M_PL_CSNF2	numeric	11	23	6	FALSE	(null)	(null)	(null)	FALSE
+	M_PL_MVNFCP2	numeric	11	23	6	FALSE	(null)	(null)	(null)	FALSE
+	M_TP_LQTY32	numeric	11	24	8	FALSE	(null)	(null)	(null)	FALSE
+										
+	 187 record(s) selected [Fetch MetaData: 1517/ms] [Fetch Data: 133/ms] 									
+										
+										
+										
+										
+Comment :   TAB_ALLTRNRP_PL1_REP is too many records. So spilit this big PL1 table into 5 son PL1  table as per 5 different productions. i.e. DMDBO.TAB_TRN_SCF_PL1_REP										
+
+///TAB_TRN_IRD_PL2_REP(PL2表)
+	Column_name	Type	Length	Prec	Scale	Nulls	Default_name	Rule_name	Access_Rule_name	Identity
+	TIMESTAMP      	timestamp	8			1				0
+	M_IDENTITY     	numeric	5	9	0	0				1
+	M_DATE_REP0    	datetime	8			1				0
+	M_DATE_REP1    	datetime	8			1				0
+	M_DATE_REP2    	datetime	8			1				0
+	M_MP_SPOT0     	numeric	8	16	6	0				0
+	M_MP_SPOT1     	numeric	8	16	6	0				0
+	M_MP_SPOT2     	numeric	8	16	6	0				0
+	M_MRPL_ONB     	numeric	6	10	0	0				0
+	M_MX_PFOLIO    	char	16			0				0
+	M_MX_REF_JOB   	numeric	6	10	0	0				0
+	M_NB           	numeric	6	10	0	0				0
+	M_NB_EXT       	numeric	6	10	0	0				0
+	M_NB_INIT      	numeric	6	10	0	0				0
+	M_NB_TZSYS     	numeric	2	2	0	0				0
+	M_NB_TZTRN     	numeric	2	2	0	0				0
+	M_PLIRDACS12   	numeric	8	16	2	0				0
+	M_PLIRDACS22   	numeric	8	16	2	0				0
+	M_PLIRDFPV12   	numeric	8	16	2	0				0
+	M_PLIRDFPV22   	numeric	8	16	2	0				0
+	M_PLIRDNFC12   	numeric	8	16	2	0				0
+	M_PLIRDNFC22   	numeric	8	16	2	0				0
+	M_PLIRDNFP12   	numeric	8	16	2	0				0
+	M_PLIRDNFP22   	numeric	8	16	2	0				0
+	M_PL_CGRA2     	numeric	11	23	6	0				0
+	M_PL_CGUA2     	numeric	11	23	6	0				0
+	M_PL_INSCUR    	char	20			0				0
+	M_PL_KEY1      	char	30			0				0
+	M_PL_NFMVTH2   	numeric	11	23	6	0				0
+	M_QTY_INDEX    	numeric	3	3	0	0				0
+	M_REF_DATA     	numeric	6	10	0	0				0
+	M_RSKSECTION   	char	20			0				0
+	M_S_BPV        	numeric	9	19	4	0				0
+	M_S_CAPF2      	numeric	9	19	5	0				0
+	M_TP_ACCCPND   	numeric	6	12	7	0				0
+	M_TP_ACCSCT    	char	15			0				0
+	M_TP_BOSGN     	char	10			0				0
+	M_TP_BUY       	char	1			0				0
+	M_TP_CMCLAB    	char	41			0				0
+	M_TP_CMCLST    	datetime	8			1				0
+	M_TP_CMCMAT    	char	21			0				0
+	M_TP_CMGQL00   	numeric	9	18	4	0				0
+	M_TP_CMGQL02   	numeric	9	18	4	0				0
+	M_TP_CMGQTY0   	numeric	9	18	4	0				0
+	M_TP_CMIQC0    	char	3			0				0
+	M_TP_CMIQU0    	char	20			0				0
+	M_TP_CMLQU0    	char	20			0				0
+	M_TP_CMUCLB0   	char	25			0				0
+	M_TP_CMUPUB0   	char	20			0				0
+	M_TP_CNTRP     	char	15			0				0
+	M_TP_CUTOFF    	char	10			0				0
+	M_TP_DIGPAYC   	char	3			0				0
+	M_TP_DTEFLWF   	datetime	8			1				0
+	M_TP_DTEFLWL   	datetime	8			1				0
+	M_TP_DTELBL    	char	16			0				0
+	M_TP_DTELST    	datetime	8			1				0
+	M_TP_DTESYS    	datetime	8			1				0
+	M_TP_DTETRN    	datetime	8			1				0
+	M_TP_DTEULBL   	char	16			0				0
+	M_TP_DTEUNDI   	datetime	8			1				0
+	M_TP_DVCS      	char	1			0				0
+	M_TP_FEE0      	numeric	8	16	3	0				0
+	M_TP_FXBASE    	char	3			0				0
+	M_TP_FXBRSTL   	char	1			0				0
+	M_TP_FXCTQDT   	char	3			0				0
+	M_TP_FXCTQGA   	char	3			0				0
+	M_TP_FXHDT     	numeric	4	6	2	0				0
+	M_TP_FXQTOCU   	char	3			0				0
+	M_TP_FXUND     	char	3			0				0
+	M_TP_INITSD    	char	1			0				0
+	M_TP_IPAYDTE   	datetime	8			1				0
+	M_TP_IQTY      	numeric	11	24	8	0				0
+	M_TP_IQTYS     	numeric	11	24	8	0				0
+	M_TP_MOPCRT    	numeric	2	1	0	0				0
+	M_TP_NOMCUR    	char	3			0				0
+	M_TP_NOMINAL   	numeric	9	19	2	0				0
+	M_TP_OBARRB1   	numeric	8	16	6	0				0
+	M_TP_OBARRB2   	numeric	8	16	6	0				0
+	M_TP_PFOLIO    	char	15			0				0
+	M_TP_PRICE     	numeric	12	25	8	0				0
+	M_TP_PRICED    	numeric	12	25	8	0				0
+	M_TP_QTYEQ     	numeric	11	24	8	0				0
+	M_TP_QTYEQS    	numeric	11	24	8	0				0
+	M_TP_RTAMC01   	numeric	8	16	2	0				0
+	M_TP_RTAMC02   	numeric	8	16	2	0				0
+	M_TP_RTCAP0    	numeric	9	19	2	0				0
+	M_TP_RTCAP1    	numeric	9	19	2	0				0
+	M_TP_RTCCP00   	numeric	12	25	8	0				0
+	M_TP_RTCCP01   	numeric	12	25	8	0				0
+	M_TP_RTCCP02   	numeric	12	25	8	0				0
+	M_TP_RTCCP10   	numeric	12	25	8	0				0
+	M_TP_RTCCP11   	numeric	12	25	8	0				0
+	M_TP_RTCCP12   	numeric	12	25	8	0				0
+	M_TP_RTDPC02   	datetime	8			1				0
+	M_TP_RTDPC12   	datetime	8			1				0
+	M_TP_RTDXG00   	datetime	8			1				0
+	M_TP_RTDXG01   	datetime	8			1				0
+	M_TP_RTDXG02   	datetime	8			1				0
+	M_TP_RTDXG10   	datetime	8			1				0
+	M_TP_RTDXG11   	datetime	8			1				0
+	M_TP_RTDXG12   	datetime	8			1				0
+	M_TP_RTFICC0   	char	3			0				0
+	M_TP_RTFICC1   	char	3			0				0
+	M_TP_RTFV0     	char	1			0				0
+	M_TP_RTFV1     	char	1			0				0
+	M_TP_RTMAT0    	datetime	8			1				0
+	M_TP_RTMAT1    	datetime	8			1				0
+	M_TP_RTMCLG0   	char	10			0				0
+	M_TP_RTMCLG1   	char	10			0				0
+	M_TP_RTMCLP0   	char	10			0				0
+	M_TP_RTMCLP1   	char	10			0				0
+	M_TP_RTMCNV0   	char	15			0				0
+	M_TP_RTMCNV1   	char	15			0				0
+	M_TP_RTMFRC0   	char	15			0				0
+	M_TP_RTMFRC1   	char	15			0				0
+	M_TP_RTMFRF0   	char	10			0				0
+	M_TP_RTMFRF1   	char	10			0				0
+	M_TP_RTMFRG0   	char	10			0				0
+	M_TP_RTMFRG1   	char	10			0				0
+	M_TP_RTMFRP0   	char	15			0				0
+	M_TP_RTMFRP1   	char	15			0				0
+	M_TP_RTMGC02   	numeric	5	9	4	0				0
+	M_TP_RTMGC12   	numeric	5	9	4	0				0
+	M_TP_RTMMRG0   	numeric	5	9	4	0				0
+	M_TP_RTMMRG1   	numeric	5	9	4	0				0
+	M_TP_RTMRTE0   	numeric	9	19	6	0				0
+	M_TP_RTMRTE1   	numeric	9	19	6	0				0
+	M_TP_RTVF02    	numeric	8	16	2	0				0
+	M_TP_RTVF12    	numeric	8	16	2	0				0
+	M_TP_RTVLC02   	numeric	9	19	6	0				0
+	M_TP_RTVLC12   	numeric	9	19	6	0				0
+	M_TP_RTVNF02   	numeric	8	16	2	0				0
+	M_TP_RTVNF12   	numeric	8	16	2	0				0
+	M_TP_RTXCHC    	char	1			0				0
+	M_TP_RTXCHF    	char	1			0				0
+	M_TP_RTXCHI    	char	1			0				0
+	M_TP_SECCUR    	char	3			0				0
+	M_TP_SECISS    	char	40			0				0
+	M_TP_SECLBL    	char	15			0				0
+	M_TP_SPOTN     	char	20			0				0
+	M_TP_SPTFWD    	char	1			0				0
+	M_TP_STATUS0   	char	10			0				0
+	M_TP_STATUS1   	char	10			0				0
+	M_TP_STATUS2   	char	10			0				0
+	M_TP_STRIKEN   	char	20			0				0
+	M_TP_TRADER    	char	10			0				0
+	M_TP_TRNTYPE   	char	30			0				0
+	M_TP_TYPE      	char	10			0				0
+	M_TP_TYPO      	char	20			0				0
+	M_TP_UQTY      	char	10			0				0
+	M_TP_UQTYEQ    	char	10			0				0
+	M_TRN_FMLY     	char	5			0				0
+	M_TRN_GRP      	char	5			0				0
+	M_TRN_GTYPE    	numeric	3	3	0	0				0
+	M_TRN_TYPE     	char	5			0				0
+	M_TP_CMUCLB1   	char	25			0				0
+	M_TP_RTNBPHS   	numeric	2	2	0	0				0
+	M_TP_SECCNT    	char	15			0				0
+	M_TP_SECMKTU   	char	15			0				0
+	M_TP_SMRTE     	numeric	5	9	4	0				0
+/// DM_TRN_IRD_PL3_REP（PL3表）
+Description	Column_name	Type	Length	Prec	Scale	Nulls	Default_name	Rule_name	Access_Rule_name	Identity
+	TIMESTAMP      	timestamp	8			1				0
+	M_IDENTITY     	numeric	5	9	0	0				1
+	M_C_CUR_PL     	char	3			0				0
+	M_C_PL_DT      	char	10			0				0
+	M_DATE_REP0    	datetime	8			1				0
+	M_DATE_REP1    	datetime	8			1				0
+	M_DATE_REP2    	datetime	8			1				0
+	M_H_ACCCPN     	numeric	11	24	4	0				0
+	M_H_MPCLEAN    	numeric	11	23	4	0				0
+	M_INSTRUMENT   	char	20			0				0
+	M_INTVAL2      	numeric	9	19	5	0				0
+	M_MP_R2        	numeric	6	11	4	0				0
+	M_MP_RF1       	numeric	6	11	4	0				0
+	M_MP_RF2       	numeric	6	11	4	0				0
+	M_MP_SPOT2     	numeric	8	16	6	0				0
+	M_MP_SPOT22    	numeric	8	16	6	0				0
+	M_MP_SPOTC2    	numeric	8	16	11	0				0
+	M_MP_SWAP2     	numeric	6	12	4	0				0
+	M_MP_UDDRP11   	numeric	5	9	4	0				0
+	M_MP_UDDRP12   	numeric	5	9	4	0				0
+	M_MP_UDDRP21   	numeric	5	9	4	0				0
+	M_MP_UDDRP22   	numeric	5	9	4	0				0
+	M_MP_UPRC2     	numeric	10	21	11	0				0
+	M_MP_VOL1      	numeric	5	9	4	0				0
+	M_MP_VOL2      	numeric	5	9	4	0				0
+EOD date	M_MRPL_DATE    	datetime	8			1				0
+	M_MRPL_ONB     	numeric	6	10	0	0				0
+	M_MX_PFOLIO    	char	16			0				0
+	M_MX_REF_JOB   	numeric	6	10	0	0				0
+Current (dead )trade number	M_NB           	numeric	6	10	0	0				0
+	M_NB_EXT       	numeric	6	10	0	0				0
+	M_NB_INIT      	numeric	6	10	0	0				0
+	M_PLIRDACS12   	numeric	8	16	2	0				0
+	M_PLIRDACS22   	numeric	8	16	2	0				0
+	M_PLIRDCUR1    	char	3			0				0
+	M_PLIRDCUR2    	char	3			0				0
+	M_PLIRDFIX1    	char	1			0				0
+	M_PLIRDFIX2    	char	1			0				0
+	M_PLIRDFPV10   	numeric	8	16	2	0				0
+	M_PLIRDFPV11   	numeric	8	16	2	0				0
+	M_PLIRDFPV12   	numeric	8	16	2	0				0
+	M_PLIRDFPV20   	numeric	8	16	2	0				0
+	M_PLIRDFPV21   	numeric	8	16	2	0				0
+	M_PLIRDFPV22   	numeric	8	16	2	0				0
+	M_PLIRDNFC12   	numeric	8	16	2	0				0
+	M_PLIRDNFC22   	numeric	8	16	2	0				0
+	M_PL_CGR1      	numeric	11	23	6	0				0
+	M_PL_CGR2      	numeric	11	23	6	0				0
+	M_PL_CGRA2     	numeric	11	23	6	0				0
+	M_PL_CGU1      	numeric	11	23	6	0				0
+	M_PL_CGU2      	numeric	11	23	6	0				0
+	M_PL_CGUA2     	numeric	11	23	6	0				0
+	M_PL_CSFI2     	numeric	11	23	6	0				0
+	M_PL_CSNF2     	numeric	11	23	6	0				0
+	M_PL_CSNFCP2   	numeric	11	23	6	0				0
+	M_PL_CSNFRV2   	numeric	11	23	6	0				0
+	M_PL_FE2       	numeric	11	23	6	0				0
+	M_PL_FEFI2     	numeric	11	23	6	0				0
+	M_PL_FMV2      	numeric	11	23	6	0				0
+	M_PL_FPFCP2    	numeric	11	23	6	0				0
+	M_PL_FPFRV2    	numeric	11	23	6	0				0
+	M_PL_FPNFCP2   	numeric	11	23	6	0				0
+	M_PL_FPNFRV2   	numeric	11	23	6	0				0
+	M_PL_FTFI1     	numeric	11	23	6	0				0
+	M_PL_FTFI2     	numeric	11	23	6	0				0
+	M_PL_INSCUR    	char	20			0				0
+	M_PL_KEY1      	char	30			0				0
+	M_PL_MVFCP2    	numeric	11	23	6	0				0
+	M_PL_MVFRV2    	numeric	11	23	6	0				0
+	M_PL_MVNFCP2   	numeric	11	23	6	0				0
+	M_PL_NFMV2     	numeric	11	23	6	0				0
+	M_PL_RVR2      	numeric	11	23	6	0				0
+	M_PL_RVU2      	numeric	11	23	6	0				0
+	M_PR_CTYACR2   	numeric	8	16	2	0				0
+"有些CUR trade不是有好几个leg吗,该field表示当前trade是第几个leg。
+"	M_QTY_INDEX    	numeric	3	3	0	0				0
+	M_REF_DATA     	numeric	6	10	0	0				0
+	M_RSKSECTION   	char	20			0				0
+	M_TP_ACCCPN    	numeric	6	12	7	0				0
+	M_TP_ACCCPN2   	numeric	6	12	7	0				0
+	M_TP_ACCCPND   	numeric	6	12	7	0				0
+	M_TP_AE        	char	1			0				0
+	M_TP_BOSGN     	char	10			0				0
+	M_TP_BROKER0   	char	15			0				0
+	M_TP_BROKER1   	char	15			0				0
+	M_TP_BROKER2   	char	15			0				0
+	M_TP_BROKER3   	char	15			0				0
+	M_TP_BUY       	char	1			0				0
+	M_TP_BUY_E     	char	1			0				0
+	M_TP_CMDFYS0   	char	20			0				0
+	M_TP_CMDFYS1   	char	20			0				0
+	M_TP_CMGQL00   	numeric	9	18	4	0				0
+	M_TP_CMGQTY0   	numeric	9	18	4	0				0
+	M_TP_CMGSF0    	datetime	8			1				0
+	M_TP_CMGSF1    	datetime	8			1				0
+	M_TP_CMIQC0    	char	3			0				0
+	M_TP_CMIQU0    	char	20			0				0
+	M_TP_CMLDIR0   	char	3			0				0
+	M_TP_CMLDIR1   	char	3			0				0
+	M_TP_CMLQU0    	char	20			0				0
+	M_TP_CMUCLB0   	char	25			0				0
+	M_TP_CMULAB0   	char	25			0				0
+	M_TP_CMULAB1   	char	25			0				0
+	M_TP_CMUQ0     	char	20			0				0
+	M_TP_CMUQ1     	char	20			0				0
+	M_TP_CMUQU0    	char	20			0				0
+	M_TP_CMUQU1    	char	20			0				0
+	M_TP_CNTRP     	char	15			0				0
+	M_TP_CNTRPCY   	char	30			0				0
+	M_TP_CNTRPFN   	char	255			0				0
+	M_TP_CNTRPLB   	char	50			0				0
+	M_TP_CP        	char	1			0				0
+	M_TP_CREATOR   	numeric	6	10	0	0				0
+	M_TP_CUTOFF    	char	10			0				0
+	M_TP_DELIVER   	char	20			0				0
+	M_TP_DIGPAY    	numeric	8	16	2	0				0
+	M_TP_DIGPAYC   	char	3			0				0
+The current trade 's Expired date	M_TP_DTEEXP    	datetime	8			1				0
+	M_TP_DTEFLWF   	datetime	8			1				0
+	M_TP_DTEFST    	datetime	8			1				0
+	M_TP_DTEFXGF   	datetime	8			1				0
+	M_TP_DTEFXGL   	datetime	8			1				0
+	M_TP_DTELBL    	char	16			0				0
+	M_TP_DTELST    	datetime	8			1				0
+	M_TP_DTEPMT    	datetime	8			1				0
+	M_TP_DTEPMT2   	datetime	8			1				0
+The system date when trade is  Proceeing the Trade	M_TP_DTESYS    	datetime	8			1				0
+trade date 	M_TP_DTETRN    	datetime	8			1				0
+	M_TP_DTEUND    	datetime	8			1				0
+	M_TP_DVCS      	char	1			0				0
+	M_TP_ENTITY    	char	10			0				0
+	M_TP_FEE0      	numeric	8	16	3	0				0
+	M_TP_FEECUR0   	char	3			0				0
+	M_TP_FEECUR1   	char	3			0				0
+	M_TP_FEECUR2   	char	3			0				0
+	M_TP_FEECUR3   	char	3			0				0
+	M_TP_FXBASE    	char	3			0				0
+	M_TP_FXBRSTL   	char	1			0				0
+	M_TP_FXBRWED   	datetime	8			1				0
+	M_TP_FXBRWSD   	datetime	8			1				0
+	M_TP_FXCTPDE   	char	3			0				0
+	M_TP_FXCTPFF   	numeric	6	10	0	0				0
+	M_TP_FXCTPNU   	char	3			0				0
+	M_TP_FXCTSFF   	numeric	8	15	7	0				0
+	M_TP_FXQTOCU   	char	3			0				0
+	M_TP_FXUND     	char	3			0				0
+	M_TP_INITSD    	char	1			0				0
+	M_TP_INT       	char	1			0				0
+	M_TP_IPAY      	numeric	8	16	2	0				0
+	M_TP_IPAYCUR   	char	3			0				0
+	M_TP_IPAYDTE   	datetime	8			1				0
+	M_TP_IQTY      	numeric	11	24	8	0				0
+	M_TP_LQTY1     	numeric	11	24	8	0				0
+	M_TP_LQTY2     	numeric	11	24	8	0				0
+	M_TP_LQTY30    	numeric	11	24	8	0				0
+	M_TP_LQTY32    	numeric	11	24	8	0				0
+	M_TP_LQTYS1    	numeric	11	24	8	0				0
+	M_TP_LQTYS2    	numeric	11	24	8	0				0
+	M_TP_MKTNDX    	char	40			0				0
+	M_TP_MOPCRT    	numeric	2	1	0	0				0
+	M_TP_MOPCRTD   	datetime	8			1				0
+	M_TP_MOPCRTL   	char	10			0				0
+	M_TP_MOPCRTS   	char	5			0				0
+	M_TP_MOPLST    	numeric	2	1	0	0				0
+	M_TP_MOPLSTD   	datetime	8			1				0
+Market operation(What has been done on the current trade)	M_TP_MOPLSTL   	char	10			0				0
+	M_TP_NBLTI     	numeric	6	10	0	0				0
+	M_TP_NOMCUR    	char	3			0				0
+	M_TP_NOMINAL   	numeric	9	19	2	0				0
+	M_TP_OBAR1     	numeric	8	16	6	0				0
+	M_TP_OBAR2     	numeric	8	16	6	0				0
+	M_TP_OBARTYP   	char	10			0				0
+	M_TP_PAYCUR    	char	3			0				0
+	M_TP_PFOLIO    	char	15			0				0
+	M_TP_PRICE     	numeric	12	25	8	0				0
+	M_TP_PRICED    	numeric	12	25	8	0				0
+	M_TP_QTYEQ     	numeric	11	24	8	0				0
+	M_TP_QTYEQS    	numeric	11	24	8	0				0
+	M_TP_RTACR02   	numeric	8	16	2	0				0
+	M_TP_RTACR12   	numeric	8	16	2	0				0
+	M_TP_RTAMC01   	numeric	8	16	2	0				0
+	M_TP_RTAMC02   	numeric	8	16	2	0				0
+	M_TP_RTAMO     	char	20			0				0
+	M_TP_RTCAP0    	numeric	9	19	2	0				0
+	M_TP_RTCAP1    	numeric	9	19	2	0				0
+	M_TP_RTCCP02   	numeric	12	25	8	0				0
+	M_TP_RTCCP12   	numeric	12	25	8	0				0
+	M_TP_RTCUR0    	char	3			0				0
+	M_TP_RTCUR1    	char	3			0				0
+	M_TP_RTDXC02   	datetime	8			1				0
+	M_TP_RTDXC12   	datetime	8			1				0
+	M_TP_RTDXG02   	datetime	8			1				0
+	M_TP_RTDXG12   	datetime	8			1				0
+	M_TP_RTDXP02   	datetime	8			1				0
+	M_TP_RTDXP12   	datetime	8			1				0
+	M_TP_RTFV0     	char	1			0				0
+	M_TP_RTFV1     	char	1			0				0
+	M_TP_RTFXC02   	numeric	9	19	6	0				0
+	M_TP_RTFXC12   	numeric	9	19	6	0				0
+	M_TP_RTFXSPT   	numeric	8	16	4	0				0
+	M_TP_RTMAT0    	datetime	8			1				0
+	M_TP_RTMAT1    	datetime	8			1				0
+	M_TP_RTMBDC0   	char	10			0				0
+	M_TP_RTMBDC1   	char	10			0				0
+	M_TP_RTMCLG0   	char	10			0				0
+	M_TP_RTMCNV0   	char	15			0				0
+	M_TP_RTMCNV1   	char	15			0				0
+	M_TP_RTMFRC0   	char	15			0				0
+	M_TP_RTMFRC1   	char	15			0				0
+	M_TP_RTMFRP0   	char	15			0				0
+	M_TP_RTMFRP1   	char	15			0				0
+	M_TP_RTMMRG0   	numeric	5	9	4	0				0
+	M_TP_RTMMRG1   	numeric	5	9	4	0				0
+	M_TP_RTMNDX0   	char	20			0				0
+	M_TP_RTMNDX1   	char	20			0				0
+	M_TP_RTMRTE0   	numeric	9	19	6	0				0
+	M_TP_RTMRTE1   	numeric	9	19	6	0				0
+	M_TP_RTPR0     	char	1			0				0
+	M_TP_RTPR1     	char	1			0				0
+	M_TP_RTRFCT0   	numeric	5	9	4	0				0
+	M_TP_RTRFCT1   	numeric	5	9	4	0				0
+	M_TP_RTVLC02   	numeric	9	19	6	0				0
+	M_TP_RTVLC12   	numeric	9	19	6	0				0
+	M_TP_RTXCHC    	char	1			0				0
+	M_TP_RTXCHF    	char	1			0				0
+	M_TP_RTXCHI    	char	1			0				0
+	M_TP_SECCOD    	char	15			0				0
+	M_TP_SECISSU   	char	40			0				0
+	M_TP_SPOTN     	char	20			0				0
+	M_TP_SPTFWD    	char	1			0				0
+	M_TP_STATUS0   	char	10			0				0
+	M_TP_STATUS1   	char	10			0				0
+M_TP_STATUS2 = ''  means trade  'DEAD'	M_TP_STATUS2   	char	10			0				0
+	M_TP_STRIKE    	numeric	9	18	8	0				0
+	M_TP_STRIKE2   	numeric	9	18	8	0				0
+交易策略（如Breakouts，Retracements，Novation）	M_TP_STRTGY    	char	15			0				0
+	M_TP_TIMSYS    	char	8			0				0
+	M_TP_TRADER    	char	10			0				0
+	M_TP_TYPO      	char	20			0				0
+	M_TP_UQTY      	char	10			0				0
+	M_TP_UQTYEQ    	char	10			0				0
+	M_TP_VALSTAT   	char	4			0				0
+	M_TRN_FMLY     	char	5			0				0
+	M_TRN_GRP      	char	5			0				0
+	M_TRN_GTYPE    	numeric	3	3	0	0				0
+	M_TRN_TYPE     	char	5			0				0
+///DM_UDF_IRD_REP（UDF表）
+	Column_name	Type	Length	Prec	Scale	Nulls	Default_name	Rule_name	Access_Rule_name	Identity			Column_name	Type	Length	Prec	Scale	Nulls	Default_name	Rule_name	Access_Rule_name	Identity	
+----------------	--------------	------------------------------	---------	-------	--------	--------	---------------------------	------------	-------------------	-----------			----------------	--------------	------------------------------	---------	-------	--------	--------	---------------------------	------------	-------------------	-----------
+???? Null	M_AAG_BNDRY	char	1			0				0			M_AAG_BNDRY	char	1			0				0	
+0	M_AAG_PERIOD	numeric	3	4	0	0				0			M_AAG_PERIOD	numeric	3	4	0	0				0	
+null	M_AAG_TRNCHE	char	15			0				0			M_AAG_TRNCHE	char	15			0				0	
+	M_BOOK_USER	char	10			1				0			M_BOOK_USER	char	10			1				0	
+N/Y	M_CFTC_BFH	char	1			0				0			M_CFTC_BFH	char	1			0				0	
+	M_CNTP_SNAME	char	15			0				0			M_CNTP_SNAME	char	15			0				0	
+	M_CONFO_ID	numeric	6	10	0	0				0			M_CONFO_ID	numeric	6	10	0	0				0	
+	M_CSA_EXCLUD	char	2			0				0			M_CSA_EXCLUD	char	2			0				0	
+	M_CUSIP	char	50			1				0			M_CUSIP	char	50			1				0	
+	M_EXT_REF_NB	char	40			1				0			M_EXT_REF_NB	char	40			1				0	
+	M_IDENTITY	numeric	5	9	0	0				1			M_IDENTITY	numeric	5	9	0	0				1	
+	M_IND_AMTCCY	char	3			0				0			M_IND_AMTCCY	char	3			0				0	
+	M_INDEP_AMT	numeric	9	17	2	0				0			M_INDEP_AMT	numeric	9	17	2	0				0	
+	M_LCH_CLR_ID	char	30			1				0			M_LCH_CLR_ID	char	30			1				0	
+	M_MARKETER	char	30			0				0			M_MARKETER	char	30			0				0	
+	M_MARKETER2	char	30			0	DM_UDF_COM_M_MARK_472138192			0			M_MARKETER2	char	30			0	DM_UDF_SCF_M_MARK_760139218			0	
+	M_MKT_CCY	char	3			0	DM_UDF_COM_M_MKT__488138249			0			M_MKT_CCY	char	3			0	DM_UDF_SCF_M_MKT__776139275			0	
+	M_MKT_IRV	numeric	4	7	0	0	DM_UDF_COM_M_MKT__504138306			0			M_MKT_IRV	numeric	4	7	0	0	DM_UDF_SCF_M_MKT__792139332			0	
+	M_MX_REF_JOB	numeric	6	10	0	0				0			M_MX_REF_JOB	numeric	6	10	0	0				0	
+	M_NACK_AMEND	char	30			0				0			M_NACK_AMEND	char	30			0				0	
+	M_NACK_COMME	char	30			0				0			M_NACK_COMME	char	30			0				0	
+	M_NACK_REASO	char	30			0				0			M_NACK_REASO	char	30			0				0	
+	M_NACK_REQUE	char	30			0				0			M_NACK_REQUE	char	30			0				0	
+Trade number	M_NB	numeric	6	10	0	0				0			M_NB	numeric	6	10	0	0				0	
+	M_NOTIONAL	numeric	10	20	5	0				0			M_NOTIONAL	numeric	10	20	5	0				0	
+	M_NOV_DT	datetime	8			1				0			M_NOV_DT	datetime	8			1				0	
+	M_NOV_TRD_DT	datetime	8			1				0			M_NOV_TRD_DT	datetime	8			1				0	
+	M_NOVATED	char	20			0	DM_UDF_COM_M_NOVA_253657366			0			M_NOVATED	char	20			0	DM_UDF_SCF_M_NOVA_397657879			0	
+	M_OLD_CPTY	char	15			1				0			M_OLD_CPTY	char	15			1				0	
+	M_OLD_NB_EXT	numeric	6	10	0	0	DM_UDF_COM_M_OLD__285657480			0			M_OLD_NB_EXT	numeric	6	10	0	0	DM_UDF_SCF_M_OLD__429657993			0	
+	M_ORIG_CPTY	char	15			0	DM_UDF_COM_M_ORIG_269657423			0			M_ORIG_CPTY	char	15			0	DM_UDF_SCF_M_ORIG_413657936			0	
+	M_PRICE_CAP	char	20			0				0			M_PRICE_CAP	char	20			0				0	
+	M_REF_DATA	numeric	6	10	0	0				0			M_REF_DATA	numeric	6	10	0	0				0	
+	M_REPGEN_DT	char	8			0				0			M_REPGEN_DT	char	8			0				0	
+	M_RISK_PORT	char	15			0	DM_UDF_COM_M_RISK_520138363			0			M_RISK_PORT	char	15			0	DM_UDF_SCF_M_RISK_808139389			0	
+	M_SHR_MKTR1	numeric	3	3	0	0	DM_UDF_COM_M_SHR__536138420			0			M_SHR_MKTR1	numeric	3	3	0	0	DM_UDF_SCF_M_SHR__824139446			0	
+trade的类型（如 two-side）	M_DEAL_FLG	char																					
+	M_SHR_MKTR2	numeric	3	3	0	0	DM_UDF_COM_M_SHR__552138477			0			M_SHR_MKTR2	numeric	3	3	0	0	DM_UDF_SCF_M_SHR__840139503			0	
+Source system (Trade 来自于哪个系统)	M_SRC_SYSTEM	char	10			0				0			M_SRC_SYSTEM	char	10			0				0	
+	M_STRUCT_ID	numeric	8	15	0	0				0			M_STRUCT_ID	numeric	8	15	0	0				0	
+	TIMESTAMP	timestamp	8			1				0			TIMESTAMP	timestamp	8			1				0	
+Expected loss	M_EXP_LOSS																						
+																							
+	 sp_help DM_UDF_COM_REP												 sp_help DM_UDF_SCF_REP										
+																							
+note	The hight fileds are not included in TAB_UDF_DEALALL_REP																						
+	每条trade(无论live的还是dead的）在UDF表中都对应一条记录，记录该条trade的UDF信息																						
+
+///TAB_MKTOP_REP(事件总表)
+Description	Column_name	Type	Length	Prec	Scale	Nulls	Default_name	Rule_name	Access_Rule_name	Identity
+	TIMESTAMP      	timestamp	8			1				0
+	M_IDENTITY     	numeric	5	9	0	0				1
+	M_BO_SGN       	char	10			0				0
+	M_MX_REF_JOB   	numeric	6	10	0	0				0
+Event ID, 不是trade number	M_NB           	numeric	6	10	0	0				0
+	M_REF_DATA     	numeric	6	10	0	0				0
+源Trade number，在该trade number 上执行了operation	M_ORIGIN_NB    	numeric	6	10	0	0				0
+衍生的trade number, 由该operation  衍生出的trade number，不是所有的operation都能衍生出新的trade ,如 EXP或XIT都不能衍生出新的trade.	M_DEST_NB      	numeric	6	10	0	0				0
+trader,人名	M_TRADER       	char	10			0				0
+										
+										
+										
+										
+动作事件表，记录记录发生了什么，即在哪单trade上，在哪天，被谁，执行了什么operation. 该表重心在事件，而不在trade. 										
+参考DM_TRN_AUD_REP表和MOP_ALL_TDY_REP表。										
+///TAB_UDF_MKTOP_REP（事件总表扩展表)
+Description	Column_name	Type	Length	Prec	Scale	Nulls	Default_name	Rule_name	Access_Rule_name	Identity
+	TIMESTAMP      	timestamp	8			1				0
+	M_IDENTITY     	numeric	5	9	0	0				1
+"What was the trade changed? 如 Broker/Brokerage              
+Counterparty                  
+Financial （impact P&L）                    
+Incorrect Source Documents    
+Non-Financial   (No Impaction to P&l)              
+Others (Please specify)       
+Portfolio"	M_CHANGE_TYP   	char	30			0				0
+对这次cancel操作做一个简短的说明，比M_C_R_CODE 列可读性更好	M_COMMENTS     	char	64			0				0
+	M_CVA_USDUWD   	numeric	10	20	2	0				0
+"why did the event happed?如       
+BUSINESS/SYSTEM       
+Credit Event        
+Custom Request      
+Dealer  Error        
+EarlyRisk_Prime_Bkr 
+EarlyRisk_Reaffirmed
+EarlyRisk_Rejected  
+LCH Backloading     
+NOVATION                      
+STEP_OUT_FULL           
+Sales/Marketer Error
+Trader Error            
+others"	M_C_R_CODE     	char	20			0				0
+	M_FVA_USDUWD   	numeric	10	20	2	0				0
+	M_MKT1_SHUWD   	numeric	3	3	0	0				0
+	M_MKT2_SHUWD   	numeric	3	3	0	0				0
+	M_MKTER1_UWD   	char	30			0				0
+	M_MKTER2_UWD   	char	30			0				0
+	M_MKT_IRVUWD   	numeric	6	10	0	0				0
+外键	M_MX_REF_JOB   	numeric	6	10	0	0				0
+Event id (事件id),不是trade number	M_NB           	numeric	6	10	0	0				0
+外键	M_REF_DATA     	numeric	6	10	0	0				0
+人名	M_REQUESTOR    	char	30			0				0
+	M_RK_PORTUWD   	char	15			0				0
+Current trade's source system 	M_SRC_SYSTEM   	char	10			0				0
+										
+Note: 										
+这张表事件总表(TAB_MKTOP_REP)的扩展表，记录发生该事件的原因，目前只用来记录cancel 或 cancel &reissue 的operation的其他补充信息。										
+
+
+///DM_TRN_AUD_REP（trade-事件流水表）
+description	Column_name	Type	Length	Prec	Scale	Nulls	Default_name	Rule_name	Access_Rule_name	Identity							
+	TIMESTAMP      	timestamp	8			1				0							
+	M_IDENTITY     	numeric	5	9	0	0				1							
+"
+CNCL  // Cancel market operations: a ticket can be printed at this level for audit purposes.   Generate eventID,stored in PL3 
+DEL  // Delete trade ,不会产生eventID,被delete trade number 不会存到PL1 & PL3表中。 但一单新的trade(被delete的trade的新变异)会被重新插入PL1?   
+*EXP  // Expiry of a trade , Generate eventID, stored in PL3        
+*EXR  // exercise: a warning message can be issued for the attention of BO users when a trader exercises an option, for example.   Generate eventID, stored in PL3.     
+INS    // Insert trade   ,不会产生 enventID, stored in PL1 
+INSCNCL  // Insert cancel????    ，不会产生eventID， trade number 不会存到PL3/PL1表中
+MOD   // Modify trade         
+*NET   // Netting of securities or listed products(MOP)  ，have eventID, stored in PL3
+*RPL    // Restructure(MOP):contractual re-negotiation of trade , Generate eventiD, stored 2 Items  in PL3       
+RPL_DEL  // Cancel of trades(MOP): trade is deleted but remains in the database for audit purposes. , And 2 items(M_ACT_NB2=0/1) only for CUR trade sotred in DM_TRN_AUD_REP and  Generate eventID, stored in PL3. As of  the cancel Date the deal never has no more effect whatever on book positions or PL.
+* RPL_MOD // Cancel and re-issue(MOP): correction of an error.   Generate eventID, stored in PL3
+XIT  // Early termination    , Generate eventID, store 2 items in PL3 when trade is a CUR trade . 
+(* Standard operation, others stand advanced operations)"	M_ACTION       	char	15			0				0							
+	M_ACT_COM0     	char	100			0				0							
+	M_ACT_COM1     	char	100			0				0							
+	M_ACT_COM2     	char	100			0				0							
+事件Trade Number	M_ACT_NB0      	numeric	6	10	0	0				0							
+标记curent trade的源头（或保存生成M_ACT_NB0 trade的Event ID 或 保存M_ACT_NB0 trade所对应的dead leg的 trade ID） ， 见下面的例子去理解(同一个事件eventID可能会引起两个或更多操作如EXR事件之后会伴随着一个 CNCL事件；一个PRL事件之后会伴随两个CNCL事件同时发生)	M_ACT_NB1      	numeric	9	17	6	0				0							
+0 or 1，与leg有关(for Swaps you would have leg0 and leg1)	M_ACT_NB2      	numeric	9	17	6	0				0							
+	M_BO_FO        	char	10			0				0							
+Murex date（roll date 时，roll的就是它）, 一定大于或等于M_DATE_CMP(Actural date)	M_DATE         	datetime	8			1				0							
+Actual date (系统日期) 	M_DATE_CMP     	datetime	8			1				0							
+	M_ID           	numeric	6	10	0	0				0							
+	M_MX_PFOLIO    	char	16			0				0							
+	M_MX_REF_JOB   	numeric	6	10	0	0				0							
+	M_REF_DATA     	numeric	6	10	0	0				0							
+Actual time(Second), Max(M_TIME_CMP) = 3600*24	M_TIME_CMP     	numeric	5	8	0	0				0							
+	M_TIME_ZONE    	numeric	2	2	0	0				0							
+i.e. TRANSACTION	M_TYPE         	char	15			0				0							
+	M_USR_DESK     	char	10			0				0							
+	M_USR_GROUP    	char	10			0				0							
+	M_USR_NAME     	char	10			0				0							
+																	
+当有人对trade做了任何action(operation)都会触发一条记录插入到该表。记录每条trade的事件流水记录，																	
+该表重心在trade，而不在事件，记录所有发生operation的trade的前身(被 cancel的trade或event ID)																	
+参考TAB_MKTOP_REP表。																	
+																	
+																	
+例1：Trader手动输入了一单新trade(trade 1),被记录为：																	
+	M_ACTION       	M_ACT_NB0      	M_ACT_NB1      	M_ACT_NB2										PL1 table		PL3 table	
+	INR	trade1 ID	0	0										M_NB	M_TP_PFOLIO	M_NB	M_TP_PFOLIO
+														trade1 ID	Port_1		
+																	
+例2：Trader在刚刚的新trade(trade 1)上执行了cancel&reissue操作（Event 2），同时再插入另一单新的trade(trade 2),该过程被记录为：									MOP_ALL table:					PL1 table		PL3 table	
+	M_ACTION       	M_ACT_NB0      	M_ACT_NB1      	M_ACT_NB2					M_NB	M_DEST_NB	FINANCIAL			M_NB	M_TP_PFOLIO	M_NB	M_TP_PFOLIO
+	PRL_MOD	trade1 ID	event2 ID	0					trade1 ID	trade2 ID	TP_PORT,Port_1,Port_2			trade2 ID	Port_2	trade1 ID	Port_1
+	INR	trade2 ID	trade1 ID	0													
+																	
+例3：Trader在刚刚的reissue生成的新trade(trade 2)上又执行了cancel&reissue操作（Event 3），同时再插入一单新的trade(trade 3),该过程被记录为：									MOP_ALL table:					PL1 table		PL3 table	
+	M_ACTION       	M_ACT_NB0      	M_ACT_NB1      	M_ACT_NB2					M_NB	M_DEST_NB	FINANCIAL			M_NB	M_TP_PFOLIO	M_NB	M_TP_PFOLIO
+	PRL_MOD	trade2 ID	event3 ID	0					trade1 ID	trade2 ID	TP_PORT,Port_1,Port_2			trade3 ID	Port_3	trade1 ID	Port_1
+	INR	trade3 ID	trade2 ID	0					trade2 ID	trade3 ID	TP_PORT,Port_1,Port_2;TP_PORT,Port_2,Port_3;					trade2 ID	Port_2
+																	
+																	
+																	
+																	
+select top 2 M_ACT_NB0,M_ACTION,M_ACT_NB1,M_ACT_NB2,M_DATE,M_DATE_CMP from DM_TRN_AUD_REP where M_ACTION = 'CNCL'																	
+UNION ALL																	
+select top 2 M_ACT_NB0,M_ACTION,M_ACT_NB1,M_ACT_NB2,M_DATE,M_DATE_CMP from DM_TRN_AUD_REP where M_ACTION = 'DEL'																	
+UNION ALL																	
+select top 2 M_ACT_NB0,M_ACTION,M_ACT_NB1,M_ACT_NB2,M_DATE,M_DATE_CMP from DM_TRN_AUD_REP where M_ACTION = 'EXP'																	
+UNION ALL																	
+select top 2 M_ACT_NB0,M_ACTION,M_ACT_NB1,M_ACT_NB2,M_DATE,M_DATE_CMP from DM_TRN_AUD_REP where M_ACTION = 'EXR'																	
+UNION ALL																	
+select top 2 M_ACT_NB0,M_ACTION,M_ACT_NB1,M_ACT_NB2,M_DATE,M_DATE_CMP from DM_TRN_AUD_REP where M_ACTION = 'INS'																	
+UNION ALL																	
+select top 2 M_ACT_NB0,M_ACTION,M_ACT_NB1,M_ACT_NB2,M_DATE,M_DATE_CMP from DM_TRN_AUD_REP where M_ACTION = 'INSP'																	
+UNION ALL																	
+select top 2 M_ACT_NB0,M_ACTION,M_ACT_NB1,M_ACT_NB2,M_DATE,M_DATE_CMP from DM_TRN_AUD_REP where M_ACTION = 'INSCNCL'																	
+UNION ALL																	
+select top 2 M_ACT_NB0,M_ACTION,M_ACT_NB1,M_ACT_NB2,M_DATE,M_DATE_CMP from DM_TRN_AUD_REP where M_ACTION = 'MOD'																	
+UNION ALL																	
+select top 2 M_ACT_NB0,M_ACTION,M_ACT_NB1,M_ACT_NB2,M_DATE,M_DATE_CMP from DM_TRN_AUD_REP where M_ACTION = 'NET'																	
+UNION ALL																	
+select top 2 M_ACT_NB0,M_ACTION,M_ACT_NB1,M_ACT_NB2,M_DATE,M_DATE_CMP from DM_TRN_AUD_REP where M_ACTION = 'RPL'																	
+UNION ALL																	
+select top 2 M_ACT_NB0,M_ACTION,M_ACT_NB1,M_ACT_NB2,M_DATE,M_DATE_CMP from DM_TRN_AUD_REP where M_ACTION = 'RPL_DEL'																	
+UNION ALL																	
+select top 2 M_ACT_NB0,M_ACTION,M_ACT_NB1,M_ACT_NB2,M_DATE,M_DATE_CMP from DM_TRN_AUD_REP where M_ACTION = 'RPL_MOD'																	
+UNION ALL																	
+select top 2 M_ACT_NB0,M_ACTION,M_ACT_NB1,M_ACT_NB2,M_DATE,M_DATE_CMP from DM_TRN_AUD_REP where M_ACTION = 'XIT'																	
+																	
+M_ACT_NB0	M_ACTION	M_ACT_NB1	M_ACT_NB2	M_DATE	M_DATE_CMP												
+44268820	CNCL           	27368639	0	May  9 2016 12:00AM	May  9 2016 12:00AM												
+44267349	CNCL           	27367750	0	May  9 2016 12:00AM	May  9 2016 12:00AM												
+44393599	DEL            	0	0	May  9 2016 12:00AM	May  9 2016 12:00AM												
+44393600	DEL            	0	0	May  9 2016 12:00AM	May  9 2016 12:00AM												
+43166385	EXP            	27441443	0	May  9 2016 12:00AM	May  7 2016 12:00AM												
+43166387	EXP            	27441444	0	May  9 2016 12:00AM	May  7 2016 12:00AM												
+42989607	EXR            	27442157	0	May  9 2016 12:00AM	May  9 2016 12:00AM												
+39631042	EXR            	27442158	0	May  9 2016 12:00AM	May  9 2016 12:00AM												
+44298637	INS            	0	0	May  2 2016 12:00AM	Apr 29 2016 12:00AM												
+44298638	INS            	0	0	May  2 2016 12:00AM	Apr 29 2016 12:00AM												
+44456122	INSP           	0	0	May 12 2016 12:00AM	May 12 2016 12:00AM												
+44456132	INSP           	0	0	May 12 2016 12:00AM	May 12 2016 12:00AM												
+44381870	INSCNCL        	0	0	May  9 2016 12:00AM	May  6 2016 12:00AM												
+44381871	INSCNCL        	0	0	May  9 2016 12:00AM	May  6 2016 12:00AM												
+0	MOD            	0	0	May  2 2016 12:00AM	Apr 29 2016 12:00AM												
+0	MOD            	0	0	May  2 2016 12:00AM	Apr 29 2016 12:00AM												
+44298615	NET            	27386191	0	May  2 2016 12:00AM	Apr 29 2016 12:00AM												
+42743852	NET            	27386191	0	May  2 2016 12:00AM	Apr 29 2016 12:00AM												
+43387834	RPL            	27442990	0	May  9 2016 12:00AM	May  9 2016 12:00AM												
+43011752	RPL            	27442992	0	May  9 2016 12:00AM	May  9 2016 12:00AM												
+44382979	RPL_DEL        	27442154	0	May  9 2016 12:00AM	May  9 2016 12:00AM												
+44381071	RPL_DEL        	27442175	0	May  9 2016 12:00AM	May  9 2016 12:00AM												
+44381301	RPL_MOD        	27441427	0	May  9 2016 12:00AM	May  6 2016 12:00AM												
+44382560	RPL_MOD        	27442146	0	May  9 2016 12:00AM	May  9 2016 12:00AM												
+43030327	XIT            	27442147	0	May  9 2016 12:00AM	May  9 2016 12:00AM												
+43030330	XIT            	27442148	0	May  9 2016 12:00AM	May  9 2016 12:00AM												
+
+
+///MOP_ALL_TDY_REP(trade-C&A流水表)
+description	Column_name	Type	Length	Prec	Scale	Nulls	Default_name	Rule_name	Access_Rule_name	Identity
+发生cancel或cancel&reissue动作的trade number	M_NB           	numeric	6	10	0	0				0
+被reissue的trade number	M_DEST_NB      	numeric	6	10	0	0				0
+发生cancel或cancel&reissue动作的trade 的交易日期	M_DATE_CMP     	datetime	8			0				0
+Actural system date	M_DATE         	datetime	8			0				0
+执行了该动作的user的名字	M_USR_NAME     	char	10			0				0
+当前trade(M_NB标识的trade)的cancel&reissue Event ID	M_ACT_NB1      	numeric	9	17	0	0				0
+0 OR 1	M_ACT_NB2      	numeric	9	17	0	0				0
+0 OR 1	M_C_ACT_NB2    	numeric	9	17	0	0				0
+如果当前的cancel或cancel&reissue动作影响了该trade的P&L, 必要的信息将被记录在该列	FINANCIAL      	varchar	512			0				0
+如果当前的cancel或cancel&reissue动作不影响该trade的P&L, 相关的信息记录该列	NON_FIN        	varchar	512			0				0
+user  group	M_USR_GROUP    	char	30			1				0
+										
+										
+这张以trade 动作表DM_TRN_AUD_REP(trade-事件总表)为数据源表，通过store procedure（scb_populate_mop_all.sql）提取出当天的关于cancel 和cancel&reissue动作的信息。将DEAD leg和LIVE leg 的信息体现在同一条记录中。										
+该表的重心在事件而不在trade										
+
+///TAB_TRN_HDR1_REP
+Description	Column_name	Type	Length	Prec	Scale	Nulls	Default_name	Rule_name	Access_Rule_name	Identity
+	TIMESTAMP	timestamp	8			1				0
+	M_IDENTITY	numeric	5	9	0	0				1
+	M_BCOMMENT0	char	30			0				0
+	M_BCOMMENT1	char	30			0				0
+	M_BCOMMENT2	char	30			0				0
+	M_BRW_ODPL	char	20			0				0
+(case when M_COMMENT_BS='S' then a.M_SPFOLIO else a.M_BPFOLIO end) as Portfolio	M_COMMENT_BS	char	1			0				0
+	M_MX_REF_JOB	numeric	6	10	0	0				0
+Trade number	M_NB	numeric	6	10	0	0				0
+System EOD	M_OPT_MOPLSD	datetime	8			1				0
+	M_OPT_MOPLST	datetime	8			1				0
+	M_REF_DATA	numeric	6	10	0	0				0
+	M_SCOMMENT0	char	30			0				0
+	M_SCOMMENT1	char	30			0				0
+	M_SCOMMENT2	char	30			0				0
+	M_SYS_DATE	datetime	8			1				0
+Trade status	M_TRN_STATUS	char	10			0				0
+Event number(TAB_MKTOP_REP.M_NB)	M_OPT_MOPNB	numeric	6	10	0	0				0
+	M_MOP_CREAT	numeric	2	1	0	0				0
+	M_BRW_NOM2	numeric	11	24	8	0				0
+	M_BRW_NOM1	numeric	11	24	8	0				0
+Linked trades' reference number 	M_LTI_NB	numeric	6	10	0	0				0
+	M_RPL_DATE1	datetime	8			1				0
+	M_RPL_AMT	numeric	8	16	2	0				0
+	M_RPL_DATE2	datetime	8			1				0
+	M_TRN_EXP	datetime	8			1				0
+	M_IRV_AMT	numeric	8	16	2	0	TAB_TRN_HD_M_IRV__392137907			0
+	M_BRW_NOMU1	char	3			0	TAB_TRN_HD_M_BRW__1078252561			0
+	M_BRW_NOMU2	char	3			0	TAB_TRN_HD_M_BRW__1094252618			0
+	M_BRW_RTE1	numeric	10	21	8	0	TAB_TRN_HD_M_BRW__1110252675			0
+	M_BRW_RTE2	numeric	6	12	4	0	TAB_TRN_HD_M_BRW__1126252732			0
+	M_DTE_AMD	datetime	8			1				0
+	M_INSTRUMENT	char	20			0	TAB_TRN_HD_M_INST_1142252789			0
+	M_CREATOR	numeric	6	10	0	0	TAB_TRN_HD_M_CREA_1158252846			0
+										
+										
+linked trade main table , its source table is TRN_HDR_DBF										
+A linked trade has a reference number										
+///MKT_OPT_DB header
+Description	Column_name	Type	Length	Prec	Scale	Nulls	Default_name	Rule_name	Access_Rule_name	Identity
+	TIMESTAMP      	timestamp	8			1				0
+	M_IDENTITY     	numeric	5	9	0	0				1
+Market ID  (Not trade number)	M_NB           	numeric	6	10	0	0				0
+Current status in market operation workflow	M_VAL_STATUS   	char	4			0				0
+	M_TRN_FMLY     	char	5			0				0
+	M_TRN_GRP      	char	5			0				0
+	M_TRN_TYPE     	char	5			0				0
+	M_INSTRUMENT   	char	20			0				0
+	M_RSKSECTION   	char	20			0				0
+	M_PL_INSCUR    	char	3			0				0
+	M_PL_KEY1      	char	30			0				0
+	M_MKT_INDEX    	char	40			0				0
+	M_TYPE         	char	10			0				0
+	M_TYPE_SUB     	char	10			0				0
+Murex date	M_DATE         	datetime	8			1				0
+murex time < 3600s*24	M_TIME         	numeric	6	10	0	0				0
+actual date	M_SYS_DATE     	datetime	8			1				0
+	M_AGREED_OP    	char	1			0				0
+	M_ORIGIN       	char	15			0				0
+Original trade number (i.e. canceled trade)	M_ORIGIN_NB    	numeric	6	10	0	0				0
+	M_DEST         	char	15			0				0
+new trade number (i.e. reissued trade)	M_DEST_NB      	numeric	6	10	0	0				0
+	M_NFAMOUNT     	numeric	8	16	2	0				0
+	M_CURRENCY     	char	3			0				0
+	M_NFAMOUNTD    	datetime	8			1				0
+	M_O_AMOUNT     	numeric	8	16	2	0				0
+	M_S_SPOT       	numeric	6	10	5	0				0
+	M_S_PRICE      	numeric	10	21	8	0				0
+	M_BO_SGN       	char	10			0				0
+	M_BO_CMT       	char	10			0				0
+	M_BO_CNF       	char	10			0				0
+	M_AREA_CODE    	numeric	2	2	0	0				0
+	M_TIME_ZONE    	numeric	2	2	0	0				0
+	M_TIME_ZONEA   	numeric	2	2	0	0				0
+	M_TRADER       	char	10			0				0
+	M_HDG_SOLD     	numeric	2	1	0	0				0
+	M_PURGE_STS    	numeric	2	1	0	0				0
+	M_PURGE_DATE   	datetime	8			1				0
+	M_PURGE_GRP    	numeric	6	10	0	0				0
+	M_COMMENT      	char	10			0				0
+	M_LAT          	char	1			0				0
+valid date	M_VAL_DATE     	datetime	8			1				0
+
+///TRMKTOP_DBF body
+Description	Column_name	Type	Length	Prec	Scale	Nulls	Default_name	Rule_name	Access_Rule_name	Identity
+	TIMESTAMP      	timestamp	8			1				0
+	M_IDENTITY     	numeric	5	9	0	0				1
+MKT_OPT_DB.M_NB           	M_MKT_NB       	numeric	6	10	0	0				0
+original Trader number	M_TRN_NB       	numeric	6	10	0	0				0
+new reissue trade number	M_BROTHER      	numeric	6	10	0	0				0
+	M_ACCOUNT      	char	15			0				0
+	M_QTY_INDEX    	numeric	3	3	0	0				0
+initial quantity	M_IQTY         	numeric	11	24	8	0				0
+Market operation quantity	M_QTY          	numeric	11	24	8	0				0
+	M_LSTTRN_NB    	numeric	2	1	0	0				0
+	M_NETMAXSTL    	datetime	8			1				0
+	M_NET_BR_NB    	numeric	6	10	0	0				0
+	M_NET_QTY      	numeric	11	24	8	0				0
+
+
+///TRN_HDRF_DBF  fees table
+Description	Column_name	Type	Length	Prec	Scale	Nulls	Default_name	Rule_name	Access_Rule_name	Identity
+	TIMESTAMP      	timestamp	8			1				0
+	M_IDENTITY     	numeric	5	9	0	0				1
+	M_FLOW_FMLY    	char	10			0				0
+	M_NB           	numeric	6	10	0	0				0
+	M_NB_MOP       	numeric	6	10	0	0				0
+	M_QTY_INDEX    	numeric	3	3	0	0				0
+	M_STL_TYPE     	numeric	2	2	0	0				0
+	M_FLOW_TYPE    	char	10			0				0
+	M_FLOW_TPNB    	numeric	2	2	0	0				0
+	M_FLOW_TPT0    	char	10			0				0
+	M_FLOW_TPT1    	char	10			0				0
+	M_FLOW_TPT2    	char	10			0				0
+	M_FLOW_TPT3    	char	10			0				0
+	M_FLOW_TPT4    	char	10			0				0
+	M_FLOW_TPL0    	char	10			0				0
+	M_FLOW_TPL1    	char	10			0				0
+	M_FLOW_TPL2    	char	10			0				0
+	M_FLOW_TPL3    	char	10			0				0
+	M_FLOW_TPL4    	char	10			0				0
+	M_DATE         	datetime	8			1				0
+	M_SDATE_FLAG   	numeric	2	1	0	0				0
+	M_SDATE        	datetime	8			1				0
+	M_AMOUNT       	numeric	9	19	3	0				0
+	M_CURRENCY     	char	3			0				0
+	M_COMMENT      	char	100			0				0
+	M_CTP          	char	15			0				0
+	M_FIX_DET      	numeric	2	1	0	0				0
+	M_FIX_QTYNX0   	numeric	3	3	0	0				0
+	M_FIX_QTYNX1   	numeric	3	3	0	0				0
+	M_FIX_QTYNX2   	numeric	3	3	0	0				0
+	M_FIX_PHASE0   	numeric	2	2	0	0				0
+	M_FIX_PHASE1   	numeric	2	2	0	0				0
+	M_FIX_PHASE2   	numeric	2	2	0	0				0
+	M_FIX_LEG0     	numeric	2	2	0	0				0
+	M_FIX_LEG1     	numeric	2	2	0	0				0
+	M_FIX_LEG2     	numeric	2	2	0	0				0
+	M_FIX_NDX0     	char	20			0				0
+	M_FIX_NDX1     	char	20			0				0
+	M_FIX_NDX2     	char	20			0				0
+	M_FIX_NDXSL0   	char	20			0				0
+	M_FIX_NDXSL1   	char	20			0				0
+	M_FIX_NDXSL2   	char	20			0				0
+	M_FIX_NDXST0   	numeric	3	3	0	0				0
+	M_FIX_NDXST1   	numeric	3	3	0	0				0
+	M_FIX_NDXST2   	numeric	3	3	0	0				0
+	M_FIX_DTE0     	datetime	8			1				0
+	M_FIX_DTE1     	datetime	8			1				0
+	M_FIX_DTE2     	datetime	8			1				0
+	M_FIX_DTECF0   	datetime	8			1				0
+	M_FIX_DTECF1   	datetime	8			1				0
+	M_FIX_DTECF2   	datetime	8			1				0
+	M_FIX_DTECL0   	datetime	8			1				0
+	M_FIX_DTECL1   	datetime	8			1				0
+	M_FIX_DTECL2   	datetime	8			1				0
+	M_REF_NOS      	numeric	6	10	0	0				0
+	M_REF_VOS      	numeric	6	10	0	0				0
+	M_FIX_RLEG0    	numeric	2	2	0	0				0
+	M_FIX_RLEG1    	numeric	2	2	0	0				0
+	M_FIX_RLEG2    	numeric	2	2	0	0				0
+	M_PER_STRK     	numeric	9	19	3	0				0
+	M_LEG_IS_RCV   	numeric	2	2	0	0				0
+	M_REFERENCE    	numeric	6	10	0	0				0
+	M_ORG_REF      	numeric	6	10	0	0				0
+	M_ORG_FID      	numeric	3	3	0	0				0
+	M_ORG_TRNNB    	numeric	6	10	0	0				0
+	M_GLB_TYPO     	char	10			0				0
+	M_PER_RATE     	numeric	8	16	6	0				0
+	M_PER_NOM      	numeric	9	19	3	0				0
+	M_PER_NUNIT0   	char	10			0				0
+	M_PER_NUNIT1   	char	10			0				0
+	M_PER_NUNIT2   	char	10			0				0
+	M_PER_FCONV0   	char	15			0				0
+	M_PER_FCONV1   	char	15			0				0
+	M_PER_FCONV2   	char	15			0				0
+	M_PER_NDX0     	char	20			0				0
+	M_PER_NDX1     	char	20			0				0
+	M_PER_NDX2     	char	20			0				0
+	M_PER_MRG0     	numeric	6	10	5	0				0
+	M_PER_MRG1     	numeric	6	10	5	0				0
+	M_PER_MRG2     	numeric	6	10	5	0				0
+	M_FRM_DEN      	numeric	6	10	4	0				0
+	M_FRM_NUM      	numeric	6	10	4	0				0
+	M_SE_CODE      	char	15			0				0
+	M_SE_LABEL     	char	15			0				0
+	M_SE_MARKET    	char	10			0				0
+	M_SE_QTY       	numeric	11	22	8	0				0
+	M_SE_PRICE     	numeric	11	22	12	0				0
+	M_TRD_DATE     	datetime	8			1				0
+	M_AMORT_DATE   	datetime	8			1				0
+	M_STTAMT_DAT   	datetime	8			1				0
+
+
+///note
+## Common Database ##																							
+                TAB_ALLTRNRP_PL1_REP:  you can got the common trade info from the table, ,which will never be used after Rubicon Project completion.																							
+                TAB_ALLTRNRP_PL2_REP:  Due to Sybase table constrain (one table only include 100 fields), we create the table as supplement,,which will never be used after Rubicon Project completion.																							
+                TAB_TRN_HDR1_REP: trade header REP table																							
+                DM_TRN_USRD_REP: user info REP table																							
+                TAB_UDF_DEALALL_REP:  ALL product UDF REP table,which will never be used after Rubicon Project completion.																							
+                DM_UDF_$PRODUCTION_REP(DM_UDF_COM_REP) : each product UDF REP table																							
+               TABLE#DATA#DEALCURR_DBF :  Financial Dabase UDF table																							
+                DM_TRNRP_CST1L_REP: live trade cash flow REP table																							
+                DM_TRNRP_CST1D_REP: Dead trade cash flow REP table																							
+                DM_COUNTERPARTY_REP: counterparty REP table																							
+                TAB_SPTCV2_REP: spot (rate convert)																							
+                DM_TRNRP_PL3_REP: Dead trade info																							
+               TABLE#DATA#COUNTERP_DBF      Financial Dabase UDF table (Counterparty User Defined Fields)																							
+																							
+																							
+####  Datamart DB 很重要的三张表，两个重要的公共字段																							
+select distinct T1.M_TRN_FMLY   from  TAB_ALLTRNRP_PL1_REP T1										select distinct T1.M_TRN_FMLY from  TAB_ALLTRNRP_PL2_REP T1										select distinct T1.M_TRN_FMLY from  DM_TRNRP_PL3_REP T1			
+---------------------------										---------------------------										---------------------------			
+M_TRN_FMLY										M_TRN_FMLY										M_TRN_FMLY			
+COM  										COM  										COM  			
+CRD  										CRD  										CRD  			
+CURR 										CURR 										CURR 			
+IRD  										IRD  										IRD  			
+SCF  										SCF  										SCF  			
+																							
+#####																							
+select distinct T1.M_TRN_GTYPE from TAB_ALLTRNRP_PL1_REP T1 where T1.M_TRN_FMLY = 'COM'										select distinct T1.M_TRN_GTYPE from TAB_ALLTRNRP_PL2_REP T1 where T1.M_TRN_FMLY = 'COM'										select distinct T1.M_TRN_GTYPE from DM_TRNRP_PL3_REP T1 where T1.M_TRN_FMLY = 'COM'			
+-----------------------------			 DMDBO.TAB_TRN_COM_PL1_REP							-----------------------------			DMDBO.TAB_TRN_COM_PL2_REP							-----------------------------			DMDBO.DM_TRN_COM_PL3_REP
+M_TRN_GTYPE										M_TRN_GTYPE										M_TRN_GTYPE			
+100										100										100			
+101										101										101			
+102										102										102			
+103										103										103			
+130										130										130			
+131										131										131			
+132										132										132			
+136										136										136			
+113										113										113			
+																							
+select distinct T1.M_TRN_GTYPE from TAB_ALLTRNRP_PL1_REP T1 where T1.M_TRN_FMLY = 'CRD'										select distinct T1.M_TRN_GTYPE from TAB_ALLTRNRP_PL2_REP T1 where T1.M_TRN_FMLY = 'CRD'										select distinct T1.M_TRN_GTYPE from DM_TRNRP_PL3_REP T1 where T1.M_TRN_FMLY = 'CRD'			
+-----------------------------			DMDBO.TAB_TRN_CRD_PL1_REP							-----------------------------			DMDBO.TAB_TRN_CRD_PL2_REP							-----------------------------			DMDBO.DM_TRN_CRD_PL3_REP
+M_TRN_GTYPE										M_TRN_GTYPE										M_TRN_GTYPE			
+29										29										29			
+95										95										95			
+98										98										98			
+122										122										122			
+124										124										123			
+																				124			
+select distinct T1.M_TRN_GTYPE from TAB_ALLTRNRP_PL1_REP T1 where T1.M_TRN_FMLY = 'CURR'										select distinct T1.M_TRN_GTYPE from TAB_ALLTRNRP_PL2_REP T1 where T1.M_TRN_FMLY = 'CURR'										select distinct T1.M_TRN_GTYPE from DM_TRNRP_PL3_REP T1 where T1.M_TRN_FMLY = 'CURR'			
+-----------------------------			DMDBO.TAB_TRN_CUR_PL1_REP							-----------------------------			DMDBO.TAB_TRN_CUR_PL2_REP							-----------------------------			DMDBO.DM_TRN_CUR_PL3_REP
+M_TRN_GTYPE										M_TRN_GTYPE										M_TRN_GTYPE			
+70										70										70			
+71										71										71			
+72										72										72			
+74										74										74			
+76										76										76			
+77										77										77			
+80										80										80			
+82										82										82			
+84										84										84			
+85										85										85			
+86										86										86			
+87										87										87			
+88										88										88			
+89										89										89			
+																							
+																							
+select distinct T1.M_TRN_GTYPE from TAB_ALLTRNRP_PL1_REP T1 where T1.M_TRN_FMLY = 'IRD'										select distinct T1.M_TRN_GTYPE from TAB_ALLTRNRP_PL2_REP T1 where T1.M_TRN_FMLY = 'IRD'										select distinct T1.M_TRN_GTYPE from DM_TRNRP_PL3_REP T1 where T1.M_TRN_FMLY = 'IRD'			
+-----------------------------			DMDBO.TAB_TRN_IRD_PL1_REP							-----------------------------			DMDBO.TAB_TRN_IRD_PL2_REP							-----------------------------			DMDBO.DM_TRN_IRD_PL3_REP
+M_TRN_GTYPE										M_TRN_GTYPE										M_TRN_GTYPE			
+1										1										1			
+2										2										2			
+3										3										3			
+4										4										4			
+5										5										5			
+8										8										8			
+19										19										19			
+20										20										20			
+41										41										41			
+42										42										49			
+49										49										50			
+50										50										63			
+																							
+select distinct T1.M_TRN_GTYPE from TAB_ALLTRNRP_PL1_REP T1 where T1.M_TRN_FMLY = 'SCF'										select distinct T1.M_TRN_GTYPE from TAB_ALLTRNRP_PL2_REP T1 where T1.M_TRN_FMLY = 'SCF'										select distinct T1.M_TRN_GTYPE from DM_TRNRP_PL3_REP T1 where T1.M_TRN_FMLY = 'SCF'			
+-----------------------------			DMDBO.TAB_TRN_SCF_PL1_REP							-----------------------------			DMDBO.TAB_TRN_SCF_PL2_REP							-----------------------------			DMDBO.DM_TRN_SCF_PL3_REP
+M_TRN_GTYPE										M_TRN_GTYPE										M_TRN_GTYPE			
+90										90										90			
+																							
+																							
+																							
+																							
+																							
+																							
+																							
+Journey shared:																							
+select T1.M_IDENTITY, T1.M_ID, T1.M_FAMILY, T1.M_GROUP, T1.M_TYPE, T1.M_LABEL, T1.M_DESC, T1.M_GEN_PAY from TRN_TYPO_DBF T1  order by T1.M_ID asc																							
+																							
+																							
+																							
+																							
+																							
+																							
+DB 中没有我想要的数据，这种情况下，我应该怎么发邮件请求Wesley他们为我刷DB dump呢？																							
+[Cathy] User  booked some trade on 11 Aug , so you can get 11 Aug dump after 12 Aug.																							
+																							
+																							
+还有个问题，你们要求他们刷DB到指定的某一天，是根据什么条件？（哪个比表的哪个字段来决定你要刷到那一天的？）																							
+[Cathy] there are two sql to check the db date.																							
+select M_REP_DATE_2 from DMDBO.DM_DATES_REP----------------------------mxgdb																							
+select M_REP_DATE_2 from MUREXDB.ALLDATES_DBF------------mxg																							
+																							
+																							
+																							
+																							
+MPX_SPOT_DBF    SPOT Rate stored in this table																							
+																							
+																							
+select * from MPX_SPOT_DBF where M__ALIAS_='./BORATES' and M__DATE_= (select max(M__DATE_) from MPX_SPOT_DBF where M__DATE_ not in (select max(M__DATE_) from MPX_SPOT_DBF))																							
+																							
+																							
+																							
+																							
+																							
+Main Category of tables (Supervisor -> Group/xxx/Consistency/Template)																							
+Bundle	Check on object delete																						
+	Main																						
+Call/Deposit	Authorize overdraft																						
+Combined Portfolio	Erasable test																						
+Confirmation instr.	Address																						
+	Custom Information																						
+	Language																						
+	Master Agreement																						
+Counterpart	Bank code																						
+	User fields																						
+Deals table	COM|ASIAN|																						
+	COM|ASIAN|CLR																						
+	COM|EFS|																						
+	COM|FUT|																						
+	COM|FWD|																						
+	COM|LB|																						
+	COM|OFUT|LST																						
+	COM|OFUT|OTC																						
+	COM|OPT|CMP																						
+	COM|OPT|SMP																						
+	COM|OPT|SWAP																						
+	COM|SPOT|																						
+	COM|SWAP|																						
+	COM|SWAP|CLR																						
+	CRD|CDS|																						
+	CRD|CFUT|																						
+	CRD|CRDIO|																						
+	CRD|CRDI|																						
+	CRD|EDS|																						
+	CRD|FDB|																						
+	CRD|FL|																						
+	CRD|NDB|																						
+	CRD|OASWP|																						
+	CRD|OBDS|																						
+	CRD|OCDO|																						
+	CRD|OCDS|																						
+	CRD|PCDS|																						
+	CRD|RLOAN|																						
+	CRD|RTRS|																						
+	CRD|SCDO|																						
+	CURR|FUT|FUT																						
+	CURR|FXD|FXD																						
+	CURR|FXD|FXDS																						
+	CURR|FXD|XSW																						
+	CURR|OPT|ASN																						
+	CURR|OPT|BAR																						
+	CURR|OPT|BAR2																						
+	CURR|OPT|BOF																						
+	CURR|OPT|BSK																						
+	CURR|OPT|CMP																						
+	CURR|OPT|FLEX																						
+	CURR|OPT|KIKO																						
+	CURR|OPT|LKB																						
+	CURR|OPT|LST																						
+	CURR|OPT|RBT																						
+	CURR|OPT|RBTS																						
+	CURR|OPT|SMP																						
+	CURR|OPT|SMPS																						
+	CURR|OPT|STRA																						
+	EQD|BOND|CNV																						
+	EQD|BOND|IDX																						
+	EQD|COL|																						
+	EQD|EQS|																						
+	EQD|EQUIT|																						
+	EQD|EQUIT|FWD																						
+	EQD|FS|																						
+	EQD|FUT|																						
+	EQD|LB|																						
+	EQD|OPT|ACASN																						
+	EQD|OPT|ACC																						
+	EQD|OPT|ACPUT																						
+	EQD|OPT|ALTPN																						
+	EQD|OPT|ASI																						
+	EQD|OPT|AUTOC																						
+	EQD|OPT|BAR																						
+	EQD|OPT|BERMU																						
+	EQD|OPT|CCLQT																						
+	EQD|OPT|CLQT																						
+	EQD|OPT|CNDVS																						
+	EQD|OPT|CRAC																						
+	EQD|OPT|CRBSK																						
+	EQD|OPT|CRDR																						
+	EQD|OPT|CRRVS																						
+	EQD|OPT|DASN																						
+	EQD|OPT|DBARR																						
+	EQD|OPT|DBCOU																						
+	EQD|OPT|DIGLB																						
+	EQD|OPT|FLEX																						
+	EQD|OPT|HMLY																						
+	EQD|OPT|KICAL																						
+	EQD|OPT|LAD																						
+	EQD|OPT|LBCLQ																						
+	EQD|OPT|LKB																						
+	EQD|OPT|MBARR																						
+	EQD|OPT|NPLN																						
+	EQD|OPT|ORG																						
+	EQD|OPT|OTC																						
+	EQD|OPT|PICUP																						
+	EQD|OPT|RAT																						
+	EQD|OPT|RELAX																						
+	EQD|OPT|RGACC																						
+	EQD|OPT|RNBW																						
+	EQD|OPT|RNBWB																						
+	EQD|OPT|RVPD																						
+	EQD|OPT|SWING																						
+	EQD|OPT|SWP																						
+	EQD|OPT|TGTAS																						
+	EQD|OPT|VOLSW																						
+	EQD|OPT|VSWP																						
+	EQD|REPO|																						
+	EQD|REPO|REPO																						
+	EQD|SHS|																						
+	EQD|WARNT|																						
+	FIN|BSB|																						
+	FIN|CFD|																						
+	FIN|LB|																						
+	FIN|REPO|																						
+	FXD|FXD|FXD																						
+	HYB|OPT|HMLY																						
+	HYB|OPT|RNBW																						
+	HYB|OPT|RNBWB																						
+	IRD|ASWP|																						
+	IRD|BOND|																						
+	IRD|BOND|CALL																						
+	IRD|BOND|FWD																						
+	IRD|CD|																						
+	IRD|CF|																						
+	IRD|CS|																						
+	IRD|FRA|																						
+	IRD|INFLS|																						
+	IRD|IRG|																						
+	IRD|IRS|																						
+	IRD|LB|																						
+	IRD|LFUT|																						
+	IRD|LN_BR|																						
+	IRD|OPT|ASI																						
+	IRD|OPT|BAR																						
+	IRD|OPT|FLEX																						
+	IRD|OPT|LAD																						
+	IRD|OPT|ORG																						
+	IRD|OPT|OTC																						
+	IRD|OPT|RAT																						
+	IRD|OSWP|																						
+	IRD|REPO|																						
+	IRD|REPO|REPO																						
+	IRD|SFUT|																						
+	IRD|TRS|																						
+	IRD|WARNT|																						
+	Non financial info																						
+	SCF|SCF|SCF																						
+Early termination	Disable fee																						
+	Unrestrict XIT																						
+Fixing	Audit																						
+	Global																						
+	Past date																						
+	Present date																						
+Hedge	Hedge																						
+	Hedge currency																						
+	Hedge entity																						
+	Hedge prospective template																						
+	Hedge template																						
+	Hedge type																						
+	Risk type																						
+	Strategy code																						
+	User definable																						
+	VaR reports																						
+Linked trade	Apply status rules on trades - Ins/Mod																						
+	Apply status rules on trades - ValAction																						
+	Cancel deal by deal																						
+	Duplicate																						
+	Inter-entity package																						
+	Package structure user fields																						
+	Perform market operation on single trade																						
+	Unlink																						
+	Validate inconsistent package																						
+Manual acc. entries	Entry date																						
+	Entry date >= value date and pay. date																						
+	Payment date																						
+	Value date																						
+Market operation	Advanced Exercise																						
+	Advanced early term																						
+	Allocate: B2B Destination																						
+	Allocate: B2B Origin																						
+	Allocate: Destination																						
+	Allocate: Origin																						
+	Allocate: Template																						
+	Assignment																						
+	Cancel																						
+	Cancel and reissue																						
+	Close out																						
+	Corporate Action																						
+	Counterpart assignme																						
+	Delta gap agreement																						
+	Early take-up																						
+	Early termination																						
+	Exercise																						
+	Exercise cancellable																						
+	Expiry																						
+	Extension																						
+	Extension (multiple)																						
+	FX Callable Exercise																						
+	MM date roll-over																						
+	Netting																						
+	Nonfin info in new deal																						
+	Perform at future date																						
+	Prolongation																						
+	Restructure																						
+	Settlement event																						
+	Split																						
+	User Fields																						
+P&L reference	Allow results modification																						
+Payment entry	Comment fields																						
+	Family/Group/Type																						
+	Manual flow: acc. section																						
+	Manual flow: entity																						
+	Manual flow: trading section																						
+	Settlement																						
+	User fields																						
+Payment table	Manual flow																						
+	Movements																						
+Portfolio entry	Accounting Section																						
+	Entity																						
+RT Deals Interface	Deals Monitor																						
+	Enable/Disable Service																						
+	Links Definition																						
+	Purge Database																						
+	Start Deals Application server																						
+	Start Deals Interface Server																						
+	Stop  Deals Application Server																						
+	Stop  Deals Interface Server																						
+	Stop All Servers																						
+	Super RT User																						
+Restructure	Disable P&L computation																						
+	Partial restructure																						
+Risk matrix	Cash & Futre Flow																						
+	Delta Hedge																						
+	Delta gap topography																						
+	Fill smile																						
+	Fixing Analysis																						
+	MKTP import																						
+	Market Risk Extraction																						
+	Open Position Extraction																						
+	Pin report																						
+	Risk Matrix Extraction																						
+	Screening batches																						
+	Skew analysis																						
+	Standard Risk Matrix																						
+	Theta Anlysis																						
+	Topography																						
+	Trading Limit																						
+	Value at Risk																						
+Routing deal module	Deal fields assignment																						
+Settlement	Authorize NWD flow																						
+Trade entry	Accounting section																						
+	Additional flows																						
+	Brokerage																						
+	Check counterparty existence																						
+	Comment																						
+	Compute premium																						
+	Confirmation																						
+	Counterparty																						
+	Date																						
+	Dest. Strategy																						
+	Dest. Trader																						
+	Draft																						
+	External#																						
+	I/E																						
+	Internal Trader																						
+	More (sub-screen)																						
+	Payment condition																						
+	Portfolio																						
+	Product typology																						
+	Sales																						
+	Settlement																						
+	Source Strategy																						
+	Time																						
+	Typology popup																						
+	User Fields																						
+Trade event	Addition																						
+	Breakage																						
+	CD Adjustement																						
+	CD Client deposit																						
+	CD Client withdrawal																						
+	CD Close account																						
+	CD Generic event																						
+	CD Interest payment																						
+	CD Interest reinvest																						
+	CD Margin adjustment																						
+	CD Next Pay date adj																						
+	CD Pay interest																						
+	CD Rate adjustment																						
+	CD Sales margin adj																						
+	CD Total deposit																						
+	CD Total withdrawal																						
+	COM Delivery event																						
+	COM Volume event																						
+	Closing																						
+	Coll Rate repricing																						
+	Credit event notice																						
+	Decrease																						
+	Default																						
+	Deletion																						
+	FS additional. subs.																						
+	FS close subs.																						
+	FS partial close																						
+	Fictive default																						
+	Generic event																						
+	Increase																						
+	Nominal Independent																						
+	Partial return																						
+	Quantity/Nominal																						
+	Rate repricing																						
+	Settlement  notice																						
+	Substitution																						
+	Total return																						
+	Undo trade event																						
+	User fields																						
+Trade issued (EXR)	Counterparty																						
+	I/E																						
+Trader	Login																						
+User definable field	Lists																						
+																							
+																							
+User Access / Security Matrix																							
+select usr.M_LABEL as 'USERID', usr.M_DESC AS 'DESC', '' as 'PWID',middle.M_GROUP as 'M_GROUP',																							
+case when grp.M_BO_FO = 0 then 'FRONT OFFICE' 																							
+                 when grp.M_BO_FO = 1 then 'MIDDLE OFFICE'																							
+                when grp.M_BO_FO = 2 then 'BACK OFFICE'      																							
+                 else '' end as 'FO/MO/BO',																							
+'' as 'PROFILE USER'																							
+from TRN_USRD_DBF usr,TRN_USRG_DBF middle,TRN_GRPD_DBF grp 																							
+where usr.M_LABEL *= middle.M_USER and middle.M_GROUP *= grp.M_LABEL																							
