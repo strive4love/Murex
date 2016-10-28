@@ -2296,4 +2296,32 @@ public class RmiMxLoader extends RmiLoader
 }
 
 
-
+## All Murex 2.1 packages (from  clease case server) 
+[1477277@dl1101 ~]$ bash
+[1477277@dl1101 ~]$ cd /
+[1477277@dl1101 /]$ ls
+a     b         bin   c       clearcase  dev_vob      etc   lib    lost+found  mnt  opt  proc  rel_vob  sbin     shared  sys  usr  view
+apps  bhanu.sh  boot  cgroup  dev        dev_vob_new  home  lib64  media       nsr  pfs  puma  root     selinux  srv     tmp  var  vobs
+[1477277@dl1101 /]$ cd dev_vob
+[1477277@dl1101 dev_vob]$ ls
+common  packages
+[1477277@dl1101 dev_vob]$ cd packages
+[1477277@dl1101 packages]$ ls
+blizzard  castor  enconnect    mars  pollux    preprocessor  scrittura2_new  scritturamis   vast2.0
+borvo2    dcrm    leps_script  nike  poseidon  s2bfx         scrittura2_prj  syndicatebook  wmb
+[1477277@dl1101 packages]$ cd poseidon/
+[1477277@dl1101 poseidon]$ ls
+[1477277@dl1101 poseidon]$ ct setview 1477277
+[1477277@dl1101 poseidon]$ ls
+bo               dm_audit_exts    dm_pl_ext       dpstools        housekeeping      medusa              mx_api               pandora         regression
+cadex            dm_basel         dm_pl_fdr       ebbs            install-me.sh     merlin              mx_api_x86           pay_db_objects  sabre_ird_fxo
+calbal           dm_cash_flow     dm_pmnt_fdr     ebs             irec              mktrates            mx_api_x86_var       pemtools        SolarisStudioX86
+callcontra       dm_complvar_fdr  dmpv01          endymion        itrs              mls                 mxml                 perseus         tools
+caxton           dm_com_sim       dm_reg_exts     eod             itrstools         model               mxtools              plutus          toyota
+common           dm_cs_ext        dm_sentry       eod_auto        jobdefs           monitor             NAG                  plutus2         triton
+common_x86       dm_cs_fdr        dm_sim_fdr      Extractions     launchers         murex               ndf                  pos_calrecon    tt.txt
+crt              dm_fdr_sens      dm_static_exts  fabs            lost+found        murexg2000          nike                 pos_mxisft      varcon
+data_conversion  dm_maketer_ext   dm_static_fdr   fdr_db_objects  Makefilebuild.sh  murex_housekeeping  objectsrelease_info  primetrade      varex
+datamart         dm_mv_ext        dm_sv_fdr       Feeders         markit            murex_lib           old_code             prorisk         varutils
+dm_acct_fdr      dm_mv_fdr        dm_test         fm_tools        mats              murfi               olink                proteus         web
+[1477277@dl1101 poseidon]$
