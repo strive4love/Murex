@@ -6990,4 +6990,185 @@ case when grp.M_BO_FO = 0 then 'FRONT OFFICE'
                  else '' end as 'FO/MO/BO',																							
 '' as 'PROFILE USER'																							
 from TRN_USRD_DBF usr,TRN_USRG_DBF middle,TRN_GRPD_DBF grp 																							
-where usr.M_LABEL *= middle.M_USER and middle.M_GROUP *= grp.M_LABEL																							
+where usr.M_LABEL *= middle.M_USER and middle.M_GROUP *= grp.M_LABEL									
+## EOD
+目前，世界上大约有30多个主要的外汇市场，它们遍布于世界各大洲的不同国家和地区。根据传统的地域划分，可分为亚洲、欧洲、北美等三大部分，其中，最重要的有伦敦、纽约、东京、新加坡、法兰克福、苏黎士、香港、巴黎、洛杉矶、悉尼等。																																																																																	
+在中国的外汇交易者拥有别的时区不能比拟的时间优势，就是能够抓住15点到24点的这个波动最大的时间段，其对于一般的投资者而言都是从事非外汇专业的工作，下午5点下班到24点这段时间是自由时间，正好可以用来做外汇投资，不必为工作的事情分心。一般周末全球都是休市的。周一凌晨5点左右开市。 																																																																																	
+																																																																																	
+夏令时(北半球4-9月实施夏令时；南半球10-3月实施夏令时)										冬令时																																																																							
+地 区 		城 市 		开市时间(GMT) 		收市时间(GMT)				地 区 		城 市 		开市时间(GMT) 		收市时间(GMT)																																																																	
+大洋州		惠灵顿		21:00		5:00				大洋州		惠灵顿		20:00		4:00																																																																	
+亚 洲		悉尼		23:00		7:00				亚 洲		悉尼		22:00		6:00																																																																	
+		东京		0:00		6:30						东京		0:00		6:30																																																																	
+		新加坡/香港		1:00		8:00						新加坡/香港		1:00		8:00																																																																	
+欧 洲		法兰克福		7:30		16:30				欧 洲		法兰克福		7:30		16:30																																																																	
+		伦敦		7:30		15:30						伦敦		8:30		16:30																																																																	
+北美洲		纽约		12:30		19:00				北美洲		纽约		13:30		20:00																																																																	
+																																																																																	
+																																																																																	
+Murex is a Trade Book system.是一个用来book金融产品交易的平台，在SCB主要用MUREX book五大类金融衍生产品的交易，CURR（currency also know as FX）; COM(commodity);CRD(Credit);IRD(Interest Rate);SCF(Simple Cash Flow) 流入Murex为USER做市场交易，生成Report。																																																																																	
+User在Murex中book了一单trade之后，可以通过MUREX查看这单trade 的 P&L，Cash flow,splictation的值，User可以根据这些值去求这单trade的一阶导数，二阶导数，Murex可以根据导数的变化做风险控制（具体在做RIST 和VAR时会用到）。User可以判断这单trade是否能赚钱，在将来的某一时刻是否能做它。																																																																																	
+Saber和 Sophis 也是Trade book system. Sophis在国际上比较知名，是做股票的。																																																																																	
+																																																																																	
+北半球4-9月实施夏令时；南半球10-3月实施夏令时。																																																																																	
+		Actual GMT	The date before Yesterday(Actual Date for people)														Yesterday(Actual Date for peple) - Wensday																									Today(Actual Date for people) - Thursday																								Tomorrow (Actual Date for peple) - Friday														Actual GMT TIME	
+	夏令时(GMT)	(大洋洲)新西兰惠灵顿	20	21	22	23	0	1	2	3	4	5	6	7	8	9	10	11	12	13	14	15	16	17	18	19	20	21	22	23	0	1	2	3	4	5	6	7	8	9	10	11	12	13	14	15	16	17	18	19	20	21	22	23	0	1	2	3	4	5	6	7	8	9	10	11	12	13	14	15	16	17	18	19	20	21	22	23	24	(大洋洲)新西兰惠灵顿	夏令时(GMT)
+		(亚洲)香港/新加坡	20	21	22	23	0	1	2	3	4	5	6	7	8	9	10	11	12	13	14	15	16	17	18	19	20	21	22	23	0	1	2	3	4	5	6	7	8	9	10	11	12	13	14	15	16	17	18	19	20	21	22	23	0	1	2	3	4	5	6	7	8	9	10	11	12	13	14	15	16	17	18	19	20	21	22	23	24	(亚洲)香港/新加坡	
+		(欧洲)伦敦	20	21	22	23	0	1	2	3	4	5	6	7	7:30	9	10	11	12	13	14	15	15:30	17	18	19	20	21	22	23	0	1	2	3	4	5	6	7	7:30	9	10	11	12	13	14	15	15:30	17	18	19	20	21	22	23	0	1	2	3	4	5	6	7	7:30	9	10	11	12	13	14	15	15:30	17	18	19	20	21	22	23	24	(欧洲)伦敦	
+		(北美洲)纽约	20	21	22	23	0	1	2	3	4	5	6	7	8	9	10	11	12	12:30	14	15	16	17	18	19	20	21	22	23	0	1	2	3	4	5	6	7	8	9	10	11	12:30	13	14	15	16	17	18	19	20	21	22	23	0	1	2	3	4	5	6	7	8	9	10	11	12:30	13	14	15	16	17	18	19	20	21	22	23	24	(北美洲)纽约	
+		Murex(Live Env) Time	20	0	1	2	3	4	5	6	7	8	9	Yesterday(Murex Date) - Wensday         13				14	15	16	17	18	19	20	21	22	23	0	1	2	3	4	5	6	7	8	9	10	        Today(Murex Date) - Thursday         14				15	16	17	18	19	20	21	22	23	0	1	2	3	4	5	6	7	8	9	 Tomorrow (Murex Date) - Friday            13				14	15	16	17	18	19	20	21	22	23	0	1	2	3	Murex Date Time	
+																																																																																	
+																												如果roll date 在周四1AM 才结束(如右图)， SQL要参考如下				0	1	2					Today(Murex Date) - Thursday																																										
+																											例： 	insert into MOP_ALL_TDY_REP( M_NB, M_DEST_NB, M_DATE_CMP, M_DATE, M_USR_NAME,M_USR_GROUP, M_ACT_NB1, M_ACT_NB2, M_C_ACT_NB2, FINANCIAL, NON_FIN)																																																					
+																												select PAR.M_ACT_NB0 as 'M_NB', 0 as 'M_DEST_NB', PAR.M_DATE_CMP as 'M_DATE_CMP', PAR.M_DATE as 'M_DATE',PAR.M_USR_NAME as 'M_USR_NAME', PAR.M_USR_GROUP as 'M_USR_GROUP',PAR.M_ACT_NB1 as 'M_ACT_NB1', PAR.M_ACT_NB2 as 'M_ACT_NB2', 0 as 'M_C_ACT_NB2', '', ''																																																					
+																												from DM_TRN_AUD_REP PAR																																																					
+																												WHERE PAR.M_ACTION = 'RPL_DEL' 																																																					
+																												--and PAR.M_DATE = @dateValue																																																					
+																												and ((PAR.M_DATE = @dateValue) or (PAR.M_DATE_CMP = @dateValue and PAR.M_DATE = @previousDateValue))																																																					
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+	Murex 支持book Murex Date 之前的trade，如何支持mike 没讲. Ctrl+u => END USER查看MUREX Date																																																																																
+																																																																																	
+	对于SCB来说，（夏令时）每天早上GST 4：00 (8PM GMT)会运行一些JOBs,这些JOBs会做以下事情:																																																																																
+	1 roll date，与实际日期同步。在SCB Murex系统中一共有四个Date（FO EOD， BO EOD ，Accounting EOD，Cancel EOD）依次需要被roll, FO EOD ROLL完了，任何人再book trade就是在第二天book trade了，BO EOD 需要被roll是为reporting 用的，mike没讲为什么需要roll一个BO EOD. Accounting EOD是为银行用的，具体mike 没讲， Cancel EOD MIKE 没讲。Murex Date也有节假日，MUREX ROLL DATE 会参考CALENDA，比如周五roll date ， 加一个business Date后会自动跳到下周一。不同的trade适用于不同的Calendar.																																																																																
+	1.1	Trade的交易时间，即哪一天开始，到哪一天到期是参考MUERX Date 的，与系统时间无关。																																																																															
+	1.2	FO EOD ROLL DATE第一步从上游(如路透社)拿到一些market Data。																																																																															
+		Back up deal dump																																																																															
+		打印 Transaction Log																																																																															
+		FO MARKER    BO MARKER  					WAIT_ACHILLES -> 第一个job																																																																										
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+	2 对上一天的data进行结算，包括market data,trade information 进行copy																																																																																
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																			perl 脚本中根据config参数，定义所有环境的环境变量，如																																																														
+																			eod_man.irdfxdev9.cf																																																														
+																			eod_env.irdfxdev9.cf																																																														
+																			eod_error.irdfxdev9.cf																																																														
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																DMART_GENFDR1																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+										DM_TLM_TRD																																																																							
+																																																																																	
+																																																																																	
+										DM_EXT_AAG																																																																							
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+																																																																																	
+
